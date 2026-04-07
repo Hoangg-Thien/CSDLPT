@@ -138,6 +138,15 @@ Neu app khong connect DB:
 - Kiem tra port 5436 dang nghe
 - Kiem tra application.yaml datasource URL
 
+Neu gap loi Flyway "Found non-empty schema(s) ... but no schema history table":
+
+- Nguyen nhan: DB da duoc tao/seed san tu init-scripts, nhung chua co bang flyway_schema_history.
+- Da cau hinh san trong application.yaml:
+  - spring.flyway.baseline-on-migrate=true
+  - spring.flyway.baseline-version=2
+- Chay lai app:
+  - .\mvnw.cmd spring-boot:run
+
 Neu can doi port theo yeu cau bao cao (vd 5432-5435):
 
 - Sua dong bo trong docker-compose.yml va application.yaml
