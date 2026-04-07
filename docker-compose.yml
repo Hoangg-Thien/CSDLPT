@@ -1,0 +1,78 @@
+services:
+  pg-south-primary:
+    image: postgres:16
+    container_name: pg-south-primary
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rideapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5436:5432"
+    volumes:
+      - pg_south_primary_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d rideapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pg-south-replica:
+    image: postgres:16
+    container_name: pg-south-replica
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rideapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5437:5432"
+    volumes:
+      - pg_south_replica_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d rideapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pg-north-primary:
+    image: postgres:16
+    container_name: pg-north-primary
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rideapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5438:5432"
+    volumes:
+      - pg_north_primary_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d rideapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pg-north-replica:
+    image: postgres:16
+    container_name: pg-north-replica
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rideapp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5439:5432"
+    volumes:
+      - pg_north_replica_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d rideapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pg_south_primary_data:
+  pg_south_replica_data:
+  pg_north_primary_data:
+  pg_north_replica_data:

@@ -18,4 +18,3 @@ INSERT INTO rides (user_id, pickup, dropoff, status, region) VALUES
 (3, 'Hoàn Kiếm','Cầu Giấy','COMPLETED', 'NORTH'),
 (3, 'Đống Đa', 'Hai Bà Trưng','COMPLETED','NORTH'),
 (4, 'Lê Chân', 'Ngô Quyền', 'COMPLETED', 'NORTH');
-```
