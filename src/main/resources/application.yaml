@@ -14,13 +14,13 @@ spring:
 app:
   regions:
     south:
-      primary-url: jdbc:postgresql://localhost:5432/rideapp
-      replica-url: jdbc:postgresql://localhost:5433/rideapp
+      primary-url: jdbc:postgresql://localhost:5436/rideapp
+      replica-url: jdbc:postgresql://localhost:5437/rideapp
       username: admin
       password: secret
     north:
-      primary-url: jdbc:postgresql://localhost:5434/rideapp
-      replica-url: jdbc:postgresql://localhost:5435/rideapp
+      primary-url: jdbc:postgresql://localhost:5438/rideapp
+      replica-url: jdbc:postgresql://localhost:5439/rideapp
       username: admin
       password: secret
   failover:
