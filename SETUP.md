@@ -123,59 +123,7 @@ Ten file can theo convention:
 
 Neu dat sai ten, Flyway se bo qua migration.
 
-## 8) Co can ignore them gi truoc khi push?
-
-Nen co trong .gitignore:
-
-- target/
-- .idea/
-- .vscode/
-- .env
-- .env.\*
-- \*.log
-- logs/
-
-Khong nen ignore:
-
-- docker-compose.yml
-- init-scripts/
-- scripts/bootstrap-replica.sh
-- src/main/resources/application.yaml
-
-Ly do: day la cac file cau hinh can thiet de nguoi khac clone ve chay duoc ngay.
-
-## 9) Quy trinh commit va push len GitHub
-
-### Buoc 1: Tao branch (neu chua co)
-
-- git checkout -b database_replication
-
-### Buoc 2: Kiem tra thay doi
-
-- git status
-
-### Buoc 3: Add file
-
-- git add .
-
-### Buoc 4: Commit
-
-- git commit -m "feat: setup postgres streaming replication for south and north"
-
-### Buoc 5: Push branch
-
-- git push -u origin database_replication
-
-### Buoc 6: Tao Pull Request
-
-- Tu branch database_replication vao main
-- Mo ta ngan gon:
-  - Add docker compose 4-node postgres topology
-  - Add streaming replication bootstrap scripts
-  - Add schema and seed scripts for South/North
-  - Add setup documentation
-
-## 10) Troubleshooting nhanh
+## 8) Troubleshooting nhanh
 
 Neu replica restart lien tuc:
 
