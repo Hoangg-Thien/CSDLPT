@@ -1,5 +1,6 @@
 package routing;
 
+import exception.ServiceUnavailableException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -34,6 +35,11 @@ public class FailoverDataSourceManager {
             connection.setReadOnly(isReadOnly);
             return connection;
         } catch (SQLException primaryException) {
+            if (!isReadOnly) {
+                throw new ServiceUnavailableException(
+                        "Primary database is down. System switched to READ_ONLY mode.",
+                        primaryException);
+            }
             Connection fallbackConnection = replica.getConnection();
             fallbackConnection.setReadOnly(isReadOnly);
             return fallbackConnection;
