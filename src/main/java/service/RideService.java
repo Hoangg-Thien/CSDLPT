@@ -10,18 +10,26 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import routing.FailoverDataSourceManager;
+import routing.LocationRouter;
 import routing.Region;
 
 @Service
 public class RideService {
 
     private final FailoverDataSourceManager failoverDataSourceManager;
+    private final LocationRouter locationRouter;
 
-    public RideService(FailoverDataSourceManager failoverDataSourceManager) {
+    public RideService(FailoverDataSourceManager failoverDataSourceManager, LocationRouter locationRouter) {
         this.failoverDataSourceManager = failoverDataSourceManager;
+        this.locationRouter = locationRouter;
     }
 
-    public Ride bookRide(Ride ride, boolean isReadOnly) {
+    public Ride bookRide(
+            Ride ride,
+            boolean isReadOnly,
+            String province,
+            Double latitude,
+            Double longitude) {
         if (isReadOnly) {
             throw new IllegalArgumentException("bookRide does not allow read-only mode");
         }
@@ -29,7 +37,7 @@ public class RideService {
             throw new IllegalArgumentException("ride must not be null");
         }
 
-        Region region = parseRegion(ride.getRegion());
+        Region region = resolveRegion(ride.getRegion(), province, latitude, longitude);
 
         String sql = """
                 INSERT INTO rides (user_id, driver_id, pickup, dropoff, status, region)
@@ -70,13 +78,18 @@ public class RideService {
         }
     }
 
-    public List<Ride> getHistory(Long userId, Region region, boolean isReadOnly) {
+    public List<Ride> getHistory(
+            Long userId,
+            Region region,
+            String province,
+            Double latitude,
+            Double longitude,
+            boolean isReadOnly) {
         if (userId == null) {
             throw new IllegalArgumentException("userId must not be null");
         }
-        if (region == null) {
-            throw new IllegalArgumentException("region must not be null");
-        }
+
+        Region resolvedRegion = resolveRegion(region == null ? null : region.name(), province, latitude, longitude);
 
         String sql = """
                 SELECT id, user_id, driver_id, pickup, dropoff, status, region, created_at
@@ -86,7 +99,7 @@ public class RideService {
                 """;
 
         List<Ride> rides = new ArrayList<>();
-        try (Connection connection = failoverDataSourceManager.getConnection(region, isReadOnly);
+        try (Connection connection = failoverDataSourceManager.getConnection(resolvedRegion, isReadOnly);
                 PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, userId);
@@ -123,10 +136,28 @@ public class RideService {
         return ride;
     }
 
-    private Region parseRegion(String regionValue) {
-        if (regionValue == null || regionValue.isBlank()) {
-            throw new IllegalArgumentException("ride.region must not be blank");
+    private Region resolveRegion(
+            String regionValue,
+            String province,
+            Double latitude,
+            Double longitude) {
+        if (regionValue != null && !regionValue.isBlank()) {
+            return parseExplicitRegion(regionValue);
         }
+        if (province != null && !province.isBlank()) {
+            return locationRouter.routeByProvince(province);
+        }
+        if (latitude != null || longitude != null) {
+            if (latitude == null || longitude == null) {
+                throw new IllegalArgumentException("Both latitude and longitude are required when using GPS routing");
+            }
+            return locationRouter.routeByGPS(latitude, longitude);
+        }
+        throw new IllegalArgumentException(
+                "Region is required. Provide region or province or latitude/longitude");
+    }
+
+    private Region parseExplicitRegion(String regionValue) {
         try {
             return Region.valueOf(regionValue.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {

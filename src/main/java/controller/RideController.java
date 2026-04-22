@@ -27,17 +27,23 @@ public class RideController {
     @PostMapping("/book")
     public ResponseEntity<Ride> bookRide(
             @RequestBody Ride ride,
+            @RequestParam(name = "province", required = false) String province,
+            @RequestParam(name = "latitude", required = false) Double latitude,
+            @RequestParam(name = "longitude", required = false) Double longitude,
             @RequestParam(name = "isReadOnly", defaultValue = "false") boolean isReadOnly) {
-        Ride createdRide = rideService.bookRide(ride, isReadOnly);
+        Ride createdRide = rideService.bookRide(ride, isReadOnly, province, latitude, longitude);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRide);
     }
 
     @GetMapping("/history/{userId}")
     public ResponseEntity<List<Ride>> getHistory(
             @PathVariable Long userId,
-            @RequestParam Region region,
+            @RequestParam(name = "region", required = false) Region region,
+            @RequestParam(name = "province", required = false) String province,
+            @RequestParam(name = "latitude", required = false) Double latitude,
+            @RequestParam(name = "longitude", required = false) Double longitude,
             @RequestParam(name = "isReadOnly", defaultValue = "true") boolean isReadOnly) {
-        List<Ride> rideHistory = rideService.getHistory(userId, region, isReadOnly);
+        List<Ride> rideHistory = rideService.getHistory(userId, region, province, latitude, longitude, isReadOnly);
         return ResponseEntity.ok(rideHistory);
     }
 }
