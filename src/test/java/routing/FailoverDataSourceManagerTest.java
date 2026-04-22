@@ -24,6 +24,7 @@ class FailoverDataSourceManagerTest {
         Connection replicaConnection = mock(Connection.class);
         when(southPrimary.getConnection()).thenThrow(new SQLException("primary down"));
         when(southReplica.getConnection()).thenReturn(replicaConnection);
+        when(replicaConnection.isValid(2)).thenReturn(true);
 
         FailoverDataSourceManager manager = new FailoverDataSourceManager(
                 southPrimary, southReplica, northPrimary, northReplica);

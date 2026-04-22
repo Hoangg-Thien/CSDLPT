@@ -10,18 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import routing.FailoverDataSourceManager;
-import routing.LocationRouter;
 import routing.Region;
+import routing.RegionResolver;
 
 @Service
 public class RideService {
 
     private final FailoverDataSourceManager failoverDataSourceManager;
-    private final LocationRouter locationRouter;
+    private final RegionResolver regionResolver;
 
-    public RideService(FailoverDataSourceManager failoverDataSourceManager, LocationRouter locationRouter) {
+    public RideService(FailoverDataSourceManager failoverDataSourceManager, RegionResolver regionResolver) {
         this.failoverDataSourceManager = failoverDataSourceManager;
-        this.locationRouter = locationRouter;
+        this.regionResolver = regionResolver;
     }
 
     public Ride bookRide(
@@ -37,7 +37,7 @@ public class RideService {
             throw new IllegalArgumentException("ride must not be null");
         }
 
-        Region region = resolveRegion(ride.getRegion(), province, latitude, longitude);
+        Region region = regionResolver.resolve(ride.getRegion(), province, latitude, longitude);
 
         String sql = """
                 INSERT INTO rides (user_id, driver_id, pickup, dropoff, status, region)
@@ -89,7 +89,11 @@ public class RideService {
             throw new IllegalArgumentException("userId must not be null");
         }
 
-        Region resolvedRegion = resolveRegion(region == null ? null : region.name(), province, latitude, longitude);
+        Region resolvedRegion = regionResolver.resolve(
+                region == null ? null : region.name(),
+                province,
+                latitude,
+                longitude);
 
         String sql = """
                 SELECT id, user_id, driver_id, pickup, dropoff, status, region, created_at
@@ -136,32 +140,4 @@ public class RideService {
         return ride;
     }
 
-    private Region resolveRegion(
-            String regionValue,
-            String province,
-            Double latitude,
-            Double longitude) {
-        if (regionValue != null && !regionValue.isBlank()) {
-            return parseExplicitRegion(regionValue);
-        }
-        if (province != null && !province.isBlank()) {
-            return locationRouter.routeByProvince(province);
-        }
-        if (latitude != null || longitude != null) {
-            if (latitude == null || longitude == null) {
-                throw new IllegalArgumentException("Both latitude and longitude are required when using GPS routing");
-            }
-            return locationRouter.routeByGPS(latitude, longitude);
-        }
-        throw new IllegalArgumentException(
-                "Region is required. Provide region or province or latitude/longitude");
-    }
-
-    private Region parseExplicitRegion(String regionValue) {
-        try {
-            return Region.valueOf(regionValue.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Unsupported region: " + regionValue, ex);
-        }
-    }
 }

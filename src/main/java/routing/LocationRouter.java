@@ -90,9 +90,7 @@ public class LocationRouter {
             return Region.SOUTH;
         }
 
-        // For unknown names, fall back to NORTH to avoid writing to southern shard by
-        // mistake.
-        return Region.NORTH;
+        throw new IllegalArgumentException("Unsupported province: " + province);
     }
 
     public Region routeByGPS(double latitude, double longitude) {

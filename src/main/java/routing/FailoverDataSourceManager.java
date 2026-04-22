@@ -31,18 +31,50 @@ public class FailoverDataSourceManager {
         DataSource replica = getReplica(region);
 
         try {
-            Connection connection = primary.getConnection();
-            connection.setReadOnly(isReadOnly);
-            return connection;
+            return getValidatedConnection(primary, isReadOnly, true);
         } catch (SQLException primaryException) {
             if (!isReadOnly) {
                 throw new ServiceUnavailableException(
                         "Primary database is down. System switched to READ_ONLY mode.",
                         primaryException);
             }
-            Connection fallbackConnection = replica.getConnection();
-            fallbackConnection.setReadOnly(isReadOnly);
-            return fallbackConnection;
+            return getValidatedConnection(replica, isReadOnly, false);
+        }
+    }
+
+    public SystemStatus getSystemStatus(Region region) {
+        DataSource primary = getPrimary(region);
+        DataSource replica = getReplica(region);
+
+        try (Connection ignored = getValidatedConnection(primary, true, true)) {
+            return new SystemStatus(region, "PRIMARY", "PRIMARY");
+        } catch (SQLException primaryException) {
+            try (Connection replicaConnection = getValidatedConnection(replica, true, false)) {
+                return new SystemStatus(region, "READ_ONLY", "REPLICA");
+            } catch (SQLException replicaException) {
+                throw new ServiceUnavailableException(
+                        "Both primary and replica databases are unavailable",
+                        replicaException);
+            }
+        }
+    }
+
+    private Connection getValidatedConnection(DataSource dataSource, boolean isReadOnly, boolean primary)
+            throws SQLException {
+        Connection connection = dataSource.getConnection();
+        try {
+            connection.setReadOnly(isReadOnly);
+            if (!connection.isValid(2)) {
+                throw new SQLException((primary ? "Primary" : "Replica") + " connection is not valid");
+            }
+            return connection;
+        } catch (SQLException ex) {
+            try {
+                connection.close();
+            } catch (SQLException ignored) {
+                // Best-effort cleanup.
+            }
+            throw ex;
         }
     }
 
