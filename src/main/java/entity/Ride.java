@@ -38,6 +38,9 @@ public class Ride {
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "price", length = 50)
+    private String price;
+
     public Ride() {
     }
 
@@ -113,5 +116,13 @@ public class Ride {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getPrice() {
+        return price;
+    }
+
+    public void setPrice(String price) {
+        this.price = price;
     }
 }
