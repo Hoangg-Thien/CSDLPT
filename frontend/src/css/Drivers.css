@@ -1,0 +1,89 @@
+.drivers-page {
+  padding: 1.5rem;
+}
+
+.drivers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.drivers-header h2 {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.table-wrap {
+  border: 0.5px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+thead {
+  background: #f7f7f5;
+}
+
+th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 13px;
+  color: #888;
+  border-bottom: 0.5px solid #e0e0e0;
+}
+
+td {
+  padding: 11px 14px;
+  color: #1a1a1a;
+  border-bottom: 0.5px solid #e0e0e0;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background: #f7f7f5;
+}
+
+/* Avatar chữ cái */
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #EEEDFE;
+  color: #3C3489;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+}
+
+/* Status badges */
+.status {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.status.available { background: #EAF3DE; color: #3B6D11; }
+.status.busy      { background: #FCEBEB; color: #A32D2D; }

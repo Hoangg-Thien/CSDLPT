@@ -1,0 +1,98 @@
+.dashboard {
+  padding: 24px;
+}
+
+/* ===== STATS ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ===== MAIN GRID ===== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+/* ===== CARD CHUNG ===== */
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+
+/* ===== STAT CARD ===== */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-icon {
+  font-size: 22px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* ===== RECENT ===== */
+.recent-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f9fafb;
+  margin-bottom: 8px;
+}
+
+/* ===== SYSTEM ===== */
+.system-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+/* ===== MAP ===== */
+.map-preview {
+  height: 220px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2b6cff, #00c6ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+/* ===== BADGE ===== */
+.badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.running {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
