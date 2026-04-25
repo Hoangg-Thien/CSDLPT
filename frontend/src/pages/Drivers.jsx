@@ -18,31 +18,28 @@ export default function Drivers() {
       <table>
         <thead>
           <tr>
-            <th>ID</th><th>Name</th><th>Phone</th><th>Region</th><th>Status</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Region</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          {drivers.map(d => (
-            <tr key={d.id}>
-              <td>{d.id}</td>
-              <td>
-                <div className="name-cell">
-                  <span className="avatar">
-                    {d.fullName?.split(" ").slice(-2).map(w => w[0]).join("")}
-                  </span>
-                  {d.fullName}
-                </div>
-              </td>
-              <td>{d.phone}</td>
-              <td>{d.region}</td>
-              <td>
-                <span className={`status ${d.isAvailable ? "available" : "busy"}`}>
-                  {d.isAvailable ? "Available" : "Busy"}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+  {drivers.map(d => (
+    <tr key={d.id}>
+      <td>{d.id}</td>
+      <td>{d.fullName}</td>  {/* ✅ bỏ div name-cell và span avatar */}
+      <td>{d.phone}</td>
+      <td>{d.region}</td>
+      <td>
+        <span className={`status ${d.isAvailable ? "available" : "busy"}`}>
+          {d.isAvailable ? "Available" : "Busy"}
+        </span>
+      </td>
+    </tr>
+  ))}
+</tbody>
       </table>
     </div>
   </div>

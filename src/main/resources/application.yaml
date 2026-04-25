@@ -2,7 +2,7 @@ spring:
   application:
     name: ride-app
   datasource:
-    url: jdbc:postgresql://localhost:5436/rideapp
+    url: jdbc:postgresql://localhost:5436/rideapp?options=-c%20TimeZone=Asia/Ho_Chi_Minh
     username: admin
     password: secret
     driver-class-name: org.postgresql.Driver
@@ -19,15 +19,17 @@ spring:
     baseline-version: 2
 
 app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
   regions:
     south:
-      primary-url: jdbc:postgresql://localhost:5436/rideapp
-      replica-url: jdbc:postgresql://localhost:5437/rideapp
+      primary-url: jdbc:postgresql://localhost:5436/rideapp?options=-c%20TimeZone=Asia/Ho_Chi_Minh
+      replica-url: jdbc:postgresql://localhost:5437/rideapp?options=-c%20TimeZone=Asia/Ho_Chi_Minh
       username: admin
       password: secret
     north:
-      primary-url: jdbc:postgresql://localhost:5438/rideapp
-      replica-url: jdbc:postgresql://localhost:5439/rideapp
+      primary-url: jdbc:postgresql://localhost:5438/rideapp?options=-c%20TimeZone=Asia/Ho_Chi_Minh
+      replica-url: jdbc:postgresql://localhost:5439/rideapp?options=-c%20TimeZone=Asia/Ho_Chi_Minh
       username: admin
       password: secret
   failover:
