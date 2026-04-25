@@ -19,6 +19,8 @@ spring:
     baseline-version: 2
 
 app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
   regions:
     south:
       primary-url: jdbc:postgresql://localhost:5436/rideapp?options=-c%20TimeZone=Asia/Ho_Chi_Minh

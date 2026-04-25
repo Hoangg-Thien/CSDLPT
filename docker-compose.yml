@@ -1,6 +1,6 @@
 services:
   pg-south-primary:
-    image: postgres:16
+    build: .
     container_name: pg-south-primary
     restart: unless-stopped
     environment:
@@ -33,7 +33,7 @@ services:
       retries: 10
 
   pg-south-replica:
-    image: postgres:16
+    build: .
     container_name: pg-south-replica
     restart: unless-stopped
     environment:
@@ -58,7 +58,7 @@ services:
       retries: 10
 
   pg-north-primary:
-    image: postgres:16
+    build: .
     container_name: pg-north-primary
     restart: unless-stopped
     environment:
@@ -91,7 +91,7 @@ services:
       retries: 10
 
   pg-north-replica:
-    image: postgres:16
+    build: .
     container_name: pg-north-replica
     restart: unless-stopped
     environment:

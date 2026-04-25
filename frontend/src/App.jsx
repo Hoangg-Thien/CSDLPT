@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
-const API = "http://localhost:8080/api";
+const API = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/+$/, "");
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const C = {
@@ -592,6 +592,7 @@ export default function MobileApp() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [usersError, setUsersError] = useState("");
 
   // 4 DB states
   const [db, setDb] = useState({
@@ -613,28 +614,33 @@ export default function MobileApp() {
 
   // Load users
   useEffect(() => {
-    fetch(`${API}/users`)
-      .then(res => res.json())
-      .then(data => {
-        const mapped = data.map(u => ({ id: u.id, full_name: u.fullName, province: u.province, region: u.region }));
-        setUsers(mapped);
-        if (mapped.length > 0) {
-          setCurrentUser(mapped[0]);
-          setPickup({ name: "Vị trí hiện tại", addr: mapped[0].province });
+    const loadUsers = async () => {
+      try {
+        const res = await fetch(`${API}/users`);
+        if (!res.ok) {
+          throw new Error(`Failed to load users: ${res.status}`);
         }
-      })
-      .catch(() => {
-        const fallback = [
-          { id: 1, full_name: "Nguyen Van A", province: "Hồ Chí Minh", region: "SOUTH" },
-          { id: 2, full_name: "Tran Thi B", province: "Bình Dương", region: "SOUTH" },
-          { id: 3, full_name: "Le Van C", province: "Hà Nội", region: "NORTH" },
-          { id: 4, full_name: "Pham Thi D", province: "Hải Phòng", region: "NORTH" },
-        ];
-        setUsers(fallback);
-        setCurrentUser(fallback[0]);
-        setPickup({ name: "Vị trí hiện tại", addr: fallback[0].province });
-      })
-      .finally(() => setLoading(false));
+
+        const data = await res.json();
+        const mapped = data.map(u => ({ id: u.id, full_name: u.fullName, province: u.province, region: u.region }));
+        if (mapped.length === 0) {
+          throw new Error("No users returned from backend");
+        }
+
+        setUsersError("");
+        setUsers(mapped);
+        setCurrentUser(mapped[0]);
+        setPickup({ name: "Vị trí hiện tại", addr: mapped[0].province });
+      } catch {
+        setUsers([]);
+        setCurrentUser(null);
+        setUsersError("Failed to load users from backend. Please verify API availability.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsers();
   }, []);
 
   // Load history
@@ -749,11 +755,20 @@ export default function MobileApp() {
     setScreen("home");
   };
 
-  if (loading || !currentUser) {
+  if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, flexDirection: "column", gap: 12 }}>
         <span style={{ fontSize: 36 }}>🚗</span>
         <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "Inter, sans-serif", color: C.textMain }}>Đang kết nối database...</span>
+      </div>
+    );
+  }
+
+  if (usersError || !currentUser) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, flexDirection: "column", gap: 12, padding: 16, textAlign: "center" }}>
+        <span style={{ fontSize: 32 }}>⚠️</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: C.textMain }}>{usersError || "No users available to display."}</span>
       </div>
     );
   }
