@@ -1,437 +1,759 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
-// ─── API BASE ─────────────────────────────────────────────────────────────────
-const API = "/api";
+const API = "http://localhost:8080/api";
 
-
-
-// ─── DESIGN TOKENS (PREMIUM THEME) ────────────────────────────────────────────
+// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const C = {
-  primary: "#000000",          // Đổi sang đen nhám quyền lực (giống Uber)
-  primaryHover: "#222222",
-  onPrimary: "#ffffff",
-  blue: "#2563eb",             // Điểm nhấn xanh dương
-  blueLight: "#eff6ff",
-  success: "#10b981",          // Xanh ngọc bích mượt
+  primary: "#0f172a",
+  blue: "#185FA5",
+  blueLight: "#dbeafe",
+  pink: "#be185d",
+  pinkLight: "#fce7f3",
+  success: "#10b981",
   successLight: "#d1fae5",
-  error: "#ef4444",            // Đỏ tươi cảnh báo
+  warning: "#f59e0b",
+  warningLight: "#fffbeb",
+  error: "#ef4444",
   errorLight: "#fee2e2",
   surface: "#ffffff",
-  background: "#f3f4f6",       // Xám nhạt dịu mắt cho nền
-  textMain: "#111827",
-  textMuted: "#6b7280",
-  border: "#e5e7eb",
+  bg: "#f1f5f9",
+  textMain: "#0f172a",
+  textMuted: "#64748b",
+  border: "#e2e8f0",
 };
 
-// ─── SVG MAP BACKGROUND (HIỆN ĐẠI HƠN) ────────────────────────────────────────
-const MapBg = ({ error = false }) => (
-  <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style={{ position: "absolute", inset: 0, opacity: error ? 0.6 : 1 }}>
-    <defs>
-      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-        <path d="M 40 0 L 0 0 0 40" fill="none" stroke={error ? "#fca5a5" : "#e5e7eb"} strokeWidth="1" />
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill={error ? "#fef2f2" : "#f9fafb"} />
-    <rect width="100%" height="100%" fill="url(#grid)" />
+// ─── DỮ LIỆU ĐỊA ĐIỂM ────────────────────────────────────────────────────────
+const PLACES = {
+  SOUTH: [
+    { name: "Vincom Center Q1", addr: "72 Lê Thánh Tôn, Q1", icon: "🏬", cat: "Mua sắm" },
+    { name: "Sân bay Tân Sơn Nhất", addr: "Trường Sơn, Tân Bình", icon: "✈️", cat: "Sân bay" },
+    { name: "Bệnh viện Chợ Rẫy", addr: "201B Nguyễn Chí Thanh, Q5", icon: "🏥", cat: "Y tế" },
+    { name: "Đại học Bách Khoa", addr: "268 Lý Thường Kiệt, Q10", icon: "🎓", cat: "Giáo dục" },
+    { name: "Phố đi bộ Nguyễn Huệ", addr: "Nguyễn Huệ, Q1", icon: "🌳", cat: "Vui chơi" },
+    { name: "Chợ Bến Thành", addr: "Lê Lợi, Q1", icon: "🛒", cat: "Chợ" },
+    { name: "Landmark 81", addr: "720A Điện Biên Phủ, Bình Thạnh", icon: "🏙️", cat: "Điểm đến" },
+    { name: "Nhà thờ Đức Bà", addr: "1 Công xã Paris, Q1", icon: "⛪", cat: "Di tích" },
+    { name: "Lotte Mart Q7", addr: "469 Nguyễn Hữu Thọ, Q7", icon: "🛍️", cat: "Mua sắm" },
+    { name: "Đảo Kim Cương Q2", addr: "Đảo Kim Cương, Q2", icon: "🏝️", cat: "Khu dân cư" },
+  ],
+  NORTH: [
+    { name: "Hồ Hoàn Kiếm", addr: "Đinh Tiên Hoàng, Hoàn Kiếm", icon: "🏞️", cat: "Du lịch" },
+    { name: "Sân bay Nội Bài", addr: "Phù Lỗ, Sóc Sơn", icon: "✈️", cat: "Sân bay" },
+    { name: "Vincom Bà Triệu", addr: "191 Bà Triệu, Hai Bà Trưng", icon: "🏬", cat: "Mua sắm" },
+    { name: "Bệnh viện Bạch Mai", addr: "78 Giải Phóng, Đống Đa", icon: "🏥", cat: "Y tế" },
+    { name: "Hồ Tây", addr: "Tây Hồ, Hà Nội", icon: "🌊", cat: "Du lịch" },
+    { name: "AEON Mall Long Biên", addr: "27 Cổ Linh, Long Biên", icon: "🛍️", cat: "Mua sắm" },
+    { name: "Văn Miếu Quốc Tử Giám", addr: "58 Quốc Tử Giám, Đống Đa", icon: "🏛️", cat: "Di tích" },
+    { name: "Chợ Đồng Xuân", addr: "Đồng Xuân, Hoàn Kiếm", icon: "🛒", cat: "Chợ" },
+    { name: "Lăng Chủ tịch HCM", addr: "2 Hùng Vương, Ba Đình", icon: "🏯", cat: "Di tích" },
+    { name: "Times City", addr: "458 Minh Khai, Hai Bà Trưng", icon: "🏢", cat: "Khu đô thị" },
+  ],
+};
 
-    {/* Các tuyến đường chính */}
-    <path d="M 80 0 L 100 400 M 250 0 L 220 400 M 0 150 L 400 120 M 0 280 L 400 300"
-      stroke={error ? "#f87171" : "#cbd5e1"} strokeWidth="8" strokeLinecap="round" opacity="0.5" />
+const RIDE_TYPES = [
+  { id: "bike", icon: "🛵", name: "V-Bike", eta: "3 phút", base: 25000 },
+  { id: "eco", icon: "🚗", name: "V-Car", eta: "5 phút", base: 55000 },
+  { id: "premium", icon: "🚙", name: "V-Plus", eta: "8 phút", base: 85000 },
+];
 
-    {/* Marker Vị trí */}
-    {!error && (
-      <g transform="translate(200,180)">
-        <circle cx="0" cy="0" r="45" fill={C.blue} opacity="0.1" />
-        <circle cx="0" cy="0" r="25" fill={C.blue} opacity="0.2">
-          <animate attributeName="r" values="15;35;15" dur="3s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.4;0;0.4" dur="3s" repeatCount="indefinite" />
+const MOCK_DRIVERS = [
+  { name: "Minh Tuấn", plate: "51G-123.45", rating: "4.9", icon: "🧑", vehicle: "Toyota Vios" },
+  { name: "Hồng Phúc", plate: "29A-678.90", rating: "4.8", icon: "👩", vehicle: "Vinfast Fadil" },
+  { name: "Văn Hùng", plate: "43B-321.10", rating: "5.0", icon: "🧔", vehicle: "Kia Morning" },
+];
+
+const fmtPrice = (n) => n.toLocaleString("vi-VN") + "đ";
+const calcFare = (base) => base + (2 + Math.floor(Math.random() * 8)) * 4000;
+
+// ─── SVG MAP ──────────────────────────────────────────────────────────────────
+const MapSVG = ({ showRoute = false, error = false }) => (
+  <svg viewBox="0 0 390 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
+    style={{ position: "absolute", inset: 0 }}>
+    <rect width="390" height="240" fill={error ? "#fef2f2" : "#e8f0e8"} />
+    {/* Blocks */}
+    {[[30, 30, 60, 40], [140, 50, 80, 55], [290, 25, 70, 50], [30, 165, 90, 60], [180, 155, 60, 45], [300, 150, 70, 55]].map(([x, y, w, h], i) => (
+      <rect key={i} x={x} y={y} width={w} height={h} rx="4" fill={error ? "#fecaca" : "#cdd9cd"} />
+    ))}
+    {/* Roads */}
+    <path d="M 0 80 Q 120 60 250 90 T 390 70" stroke={error ? "#f87171" : "#b8cbb8"} strokeWidth="8" fill="none" strokeLinecap="round" />
+    <path d="M 0 150 Q 200 130 390 160" stroke={error ? "#f87171" : "#b8cbb8"} strokeWidth="6" fill="none" strokeLinecap="round" />
+    <path d="M 100 0 Q 110 120 100 240" stroke={error ? "#f87171" : "#b8cbb8"} strokeWidth="6" fill="none" strokeLinecap="round" />
+    <path d="M 255 0 Q 262 120 258 240" stroke={error ? "#f87171" : "#b8cbb8"} strokeWidth="5" fill="none" strokeLinecap="round" />
+    {/* Route */}
+    {showRoute && (
+      <>
+        <path d="M 75 155 C 130 100 220 80 295 75" stroke={C.blue} strokeWidth="3" fill="none" strokeDasharray="6 4" strokeLinecap="round" />
+        <circle cx="295" cy="75" r="10" fill={C.pink} opacity="0.2" />
+        <circle cx="295" cy="75" r="6" fill={C.pink} />
+        <circle cx="295" cy="75" r="3" fill="white" />
+      </>
+    )}
+    {/* Pickup dot */}
+    <circle cx="75" cy="155" r="12" fill={C.blue} opacity="0.15" />
+    <circle cx="75" cy="155" r="7" fill={C.blue} />
+    <circle cx="75" cy="155" r="3" fill="white" />
+    {!showRoute && (
+      <>
+        <circle cx="75" cy="155" r="22" fill={C.blue} opacity="0.08">
+          <animate attributeName="r" values="10;24;10" dur="2.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.2;0;0.2" dur="2.5s" repeatCount="indefinite" />
         </circle>
-        <circle cx="0" cy="0" r="8" fill={C.blue} />
-        <circle cx="0" cy="0" r="3" fill="#fff" />
-      </g>
+      </>
     )}
   </svg>
 );
 
-// ─── UI COMPONENTS CỐT LÕI ────────────────────────────────────────────────────
-const GlassNav = ({ active, onNav }) => {
-  const items = [
-    { id: "home", icon: "Ri", label: "Đặt xe" },
-    { id: "activity", icon: "Ac", label: "Lịch sử" },
-  ];
+// ─── DB CONTROL PANEL ─────────────────────────────────────────────────────────
+const DevPanel = ({ users, currentUser, db, onToggleDB, onChangeUser }) => {
+  const dbKeys = ["south_primary", "south_replica", "north_primary", "north_replica"];
+  const dbLabels = { south_primary: "S-Pri", south_replica: "S-Rep", north_primary: "N-Pri", north_replica: "N-Rep" };
   return (
-    <nav style={{
-      position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
-      width: "100%", maxWidth: 420, zIndex: 50,
-      display: "flex", justifyContent: "space-around", alignItems: "center",
-      padding: "16px 20px 24px",
-      background: "rgba(255,255,255,0.85)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-      borderTop: `1px solid ${C.border}`,
-      boxShadow: "0 -10px 40px rgba(0,0,0,0.05)"
-    }}>
-      {items.map(item => (
-        <button key={item.id} onClick={() => onNav(item.id)} style={{
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-          padding: "8px 24px", borderRadius: 16, border: "none", cursor: "pointer",
-          background: "transparent",
-          color: active === item.id ? C.primary : C.textMuted,
-          fontFamily: "'Inter', sans-serif", transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
-        }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 48, height: 32, borderRadius: 16,
-            background: active === item.id ? C.background : "transparent",
-            transition: "all 0.3s"
-          }}>
-            <span style={{ fontSize: 20, fontWeight: 800 }}>{item.id === 'home' ? '🚗' : '🧾'}</span>
-          </div>
-          <span style={{ fontSize: 11, fontWeight: active === item.id ? 700 : 600 }}>{item.label}</span>
-        </button>
-      ))}
-    </nav>
-  );
-};
-
-const PremiumTopBar = ({ user, isPrimaryDown }) => {
-  const regionName = user.region === 'SOUTH' ? 'Miền Nam' : 'Miền Bắc';
-  const dbStatus = isPrimaryDown ? `Backup • ${regionName}` : `Primary • ${regionName}`;
-
-  return (
-    <header style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      height: 60, padding: "0 20px", position: "absolute", top: 0, left: 0, right: 0, zIndex: 50,
-      background: "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.primary, color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
-          {user.full_name.charAt(0)}
-        </div>
+    <div style={{ background: "#0f172a", padding: "10px 12px" }}>
+      <div style={{ fontSize: 9, color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+        Control Panel — 4 DB Nodes
       </div>
-
-      <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        background: "white", padding: "6px 14px", borderRadius: 999,
-        fontSize: 11, fontFamily: "'Inter', sans-serif", fontWeight: 700,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)", border: `1px solid ${C.border}`
-      }}>
-        <span style={{ width: 8, height: 8, borderRadius: "50%", background: isPrimaryDown ? C.error : C.success, display: "inline-block", boxShadow: `0 0 8px ${isPrimaryDown ? C.error : C.success}` }} />
-        <span style={{ color: C.textMain }}>{dbStatus}</span>
-      </div>
-    </header>
-  );
-};
-
-// ─── SCREENS ──────────────────────────────────────────────────────────────────
-const HomeScreen = ({ onNav, isPrimaryDown, user, onBookRide }) => {
-  const [selected, setSelected] = useState("eco");
-  const [destination, setDestination] = useState("");
-
-  const rides = [
-    { id: "bike", icon: "🛵", label: "V-Bike", price: "25.000đ", time: "3 phút" },
-    { id: "eco", icon: "🚗", label: "V-Car", price: "55.000đ", time: "5 phút" },
-    { id: "premium", icon: "🚙", label: "V-Plus", price: "85.000đ", time: "7 phút" },
-  ];
-
-  const handleBookClick = () => {
-    if (!destination) { alert("Vui lòng nhập điểm đến!"); return; }
-    onBookRide("Vị trí hiện tại", destination, selected);
-    setDestination("");
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
-      <PremiumTopBar user={user} isPrimaryDown={isPrimaryDown} />
-
-      <div style={{ position: "relative", flex: 1, overflow: "hidden", minHeight: 350 }}>
-        <MapBg error={isPrimaryDown} />
-
-        {/* Nút định vị nổi */}
-        <button style={{
-          position: "absolute", right: 20, bottom: "25%",
-          width: 48, height: 48, borderRadius: "50%", background: "white",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.12)", border: "none", cursor: "pointer",
-          fontSize: 20, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center"
-        }}>📍</button>
-
-        {/* Khung đặt xe */}
-        <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 30,
-          background: "white", borderRadius: "24px 24px 0 0",
-          boxShadow: "0 -10px 40px rgba(0,0,0,0.1)", padding: "24px 20px 100px"
-        }}>
-
-          <div style={{ width: 40, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
-
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: C.textMain, marginBottom: 16 }}>Đến đâu đây?</h2>
-
-          {/* Ô nhập liệu */}
-          <div style={{
-            background: C.background, borderRadius: 16, padding: "14px 16px",
-            marginBottom: 20, display: "flex", alignItems: "center", gap: 12,
-            border: "1px solid transparent", transition: "border 0.2s"
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, marginBottom: 8 }}>
+        {dbKeys.map(k => (
+          <div key={k} onClick={() => onToggleDB(k)} style={{
+            background: db[k] ? "#14532d" : "#7f1d1d",
+            border: `1px solid ${db[k] ? "#166534" : "#991b1b"}`,
+            borderRadius: 6, padding: "5px 8px", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.blue }} />
-            <input
-              value={destination}
-              onChange={e => setDestination(e.target.value)}
-              placeholder="Tìm kiếm điểm đến..."
-              style={{ flex: 1, border: "none", outline: "none", fontSize: 16, fontWeight: 500, background: "transparent", color: C.textMain }}
-            />
-          </div>
-
-          {/* Chọn loại xe */}
-          <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 10, marginBottom: 20, WebkitOverflowScrolling: 'touch' }}>
-            {rides.map(r => (
-              <div key={r.id} onClick={() => setSelected(r.id)} style={{
-                minWidth: 105, flexShrink: 0, padding: "14px 12px", borderRadius: 16, cursor: "pointer",
-                border: selected === r.id ? `2px solid ${C.primary}` : `2px solid transparent`,
-                background: selected === r.id ? "#fafafa" : "white",
-                boxShadow: selected === r.id ? "0 8px 20px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.04)",
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)", display: "flex", flexDirection: "column", alignItems: "center"
-              }}>
-                <span style={{ fontSize: 32, marginBottom: 8, filter: selected === r.id ? "drop-shadow(0 4px 6px rgba(0,0,0,0.1))" : "none" }}>{r.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.textMain }}>{r.label}</span>
-                <span style={{ fontSize: 11, fontWeight: 500, color: C.textMuted, marginTop: 2 }}>{r.time}</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: C.textMain, marginTop: 6 }}>{r.price}</span>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: db[k] ? "#86efac" : "#fca5a5" }}>{dbLabels[k]}</div>
+              <div style={{ fontSize: 9, color: db[k] ? "#4ade80" : "#f87171", opacity: 0.8 }}>
+                {k.includes("primary") ? "Write+Read" : "Read-only"}
               </div>
-            ))}
+            </div>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: db[k] ? "#4ade80" : "#f87171", display: "block" }} />
           </div>
-
-          {/* Nút đặt xe chính */}
-          <button
-            onClick={handleBookClick}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.97)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-            style={{
-              width: "100%", height: 56, background: isPrimaryDown ? C.background : C.primary,
-              color: isPrimaryDown ? C.textMuted : "white", border: "none", borderRadius: 16, cursor: isPrimaryDown ? "not-allowed" : "pointer",
-              fontSize: 17, fontWeight: 700, transition: "all 0.2s",
-              boxShadow: isPrimaryDown ? "none" : "0 10px 25px rgba(0,0,0,0.2)"
-            }}
-          >
-            {isPrimaryDown ? "Hệ thống đang bảo trì" : "Bắt đầu chuyến đi"}
-          </button>
-        </div>
+        ))}
       </div>
-      <GlassNav active="home" onNav={onNav} />
+      <select
+        value={currentUser.id}
+        onChange={e => onChangeUser(parseInt(e.target.value))}
+        style={{ width: "100%", background: "#1e293b", color: "#f1f5f9", border: "1px solid #334155", padding: "5px 8px", borderRadius: 6, fontSize: 11, outline: "none" }}
+      >
+        {users.map(u => (
+          <option key={u.id} value={u.id}>{u.full_name} ({u.region})</option>
+        ))}
+      </select>
     </div>
   );
 };
 
-const ErrorScreen = ({ onNav, user }) => (
-  <div style={{ display: "flex", flexDirection: "column", minHeight: "100%", background: C.errorLight }}>
-    <PremiumTopBar user={user} isPrimaryDown={true} />
-    <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", gap: 20 }}>
-
-      <div style={{
-        width: "100%", background: "white", borderRadius: 24, padding: "40px 24px",
-        boxShadow: "0 20px 40px rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239,68,68,0.2)",
-        display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center"
-      }}>
-        <div style={{
-          width: 80, height: 80, borderRadius: "50%", background: C.errorLight,
-          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20
+// ─── DB STATUS BAR ────────────────────────────────────────────────────────────
+const DBStatusBar = ({ db, region }) => {
+  const k = region.toLowerCase();
+  const primary = db[k + "_primary"];
+  const replica = db[k + "_replica"];
+  const src = primary ? "Primary" : replica ? "Replica" : null;
+  return (
+    <div style={{ display: "flex", gap: 5, padding: "7px 14px", borderBottom: `1px solid ${C.border}`, flexWrap: "wrap", background: C.surface }}>
+      {[
+        { label: `${k === "south" ? "South" : "North"} Primary`, up: primary, sub: "W+R" },
+        { label: `${k === "south" ? "South" : "North"} Replica`, up: replica, sub: "R" },
+      ].map(item => (
+        <span key={item.label} style={{
+          fontSize: 10, padding: "3px 8px", borderRadius: 10, fontWeight: 600,
+          background: item.up ? C.successLight : C.errorLight,
+          color: item.up ? "#065f46" : "#991b1b",
+          display: "flex", alignItems: "center", gap: 4,
         }}>
-          <span style={{ fontSize: 40 }}>⚠️</span>
-        </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: C.error, marginBottom: 12, letterSpacing: "-0.5px" }}>Lỗi Ghi Dữ Liệu</h1>
-        <p style={{ fontSize: 15, color: C.textMain, lineHeight: 1.6, fontWeight: 500 }}>
-          Máy chủ <b style={{ color: C.primary }}>Primary khu vực {user.region}</b> hiện không phản hồi. Hành động Ghi bị từ chối để đảm bảo tính toàn vẹn.
-        </p>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: item.up ? C.success : C.error, display: "block" }} />
+          {item.label} ({item.sub})
+        </span>
+      ))}
+      {src
+        ? <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 10, background: "#fef9c3", color: "#713f12", fontWeight: 600 }}>Đọc: {src}</span>
+        : <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 10, background: C.errorLight, color: "#991b1b", fontWeight: 600 }}>Offline</span>
+      }
+    </div>
+  );
+};
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", marginTop: 32 }}>
-          <button onClick={() => onNav("activity")} style={{
-            width: "100%", height: 52, borderRadius: 16, border: "none",
-            background: C.primary, color: "white", fontWeight: 700, fontSize: 16, cursor: "pointer",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)"
-          }}>Xem dữ liệu (Read-Only)</button>
-
-          <button onClick={() => onNav("home")} style={{
-            width: "100%", height: 52, borderRadius: 16, border: `2px solid ${C.border}`,
-            background: "transparent", color: C.textMain, fontWeight: 700, fontSize: 16, cursor: "pointer"
-          }}>Quay lại trang chủ</button>
-        </div>
+// ─── TOP BAR ──────────────────────────────────────────────────────────────────
+const TopBar = ({ user, db }) => {
+  const k = user.region.toLowerCase();
+  const primaryUp = db[k + "_primary"];
+  const replicaUp = db[k + "_replica"];
+  const allDown = !primaryUp && !replicaUp;
+  const dotColor = allDown ? C.error : primaryUp ? C.success : C.warning;
+  const label = allDown ? "Offline" : primaryUp
+    ? `Primary · ${user.region === "SOUTH" ? "Miền Nam" : "Miền Bắc"}`
+    : `Backup · ${user.region === "SOUTH" ? "Miền Nam" : "Miền Bắc"}`;
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: C.surface, borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.primary, color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>
+        {user.full_name.charAt(0)}
       </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, border: `1px solid ${C.border}`, padding: "5px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: dotColor, display: "block" }} />
+        {label}
+      </div>
+    </div>
+  );
+};
 
-    </main>
-    <GlassNav active="home" onNav={onNav} />
+// ─── NAV BAR ──────────────────────────────────────────────────────────────────
+const NavBar = ({ active, onNav }) => (
+  <div style={{ display: "flex", borderTop: `1px solid ${C.border}`, background: C.surface }}>
+    {[{ id: "home", icon: "🚗", label: "Đặt xe" }, { id: "activity", icon: "📋", label: "Lịch sử" }].map(item => (
+      <button key={item.id} onClick={() => onNav(item.id)} style={{
+        flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer",
+        fontSize: 11, fontWeight: 600, color: active === item.id ? C.primary : C.textMuted,
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+      }}>
+        <span style={{ fontSize: 18 }}>{item.icon}</span>
+        {item.label}
+      </button>
+    ))}
   </div>
 );
 
-const TripHistoryScreen = ({ onNav, user, rides, isPrimaryDown }) => {
-  const userRides = rides.filter(r => r.user_id === user.id);
+// ─── SEARCH SCREEN ────────────────────────────────────────────────────────────
+const SearchScreen = ({ searchFor, pickup, dropoff, region, onSelect, onBack }) => {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
+  const allPlaces = PLACES[region] || [];
+  const filtered = query.trim()
+    ? allPlaces.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.addr.toLowerCase().includes(query.toLowerCase()))
+    : allPlaces;
+
+  const isPickup = searchFor === "pickup";
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100%", background: "white" }}>
-      <div style={{ height: 60 }}><PremiumTopBar user={user} isPrimaryDown={isPrimaryDown} /></div>
+    <div style={{ background: C.surface, minHeight: "100%" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
+        <button onClick={onBack} style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${C.border}`, background: "none", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
+        <span style={{ fontSize: 14, fontWeight: 700, color: C.textMain }}>{isPickup ? "Chọn điểm đón" : "Chọn điểm đến"}</span>
+      </div>
 
-      <main style={{ flex: 1, padding: "0 0 100px", background: C.background }}>
-
-        {/* Header Lịch sử */}
-        <div style={{ padding: "24px 24px 16px", background: "white", borderBottom: `1px solid ${C.border}` }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: C.textMain, letterSpacing: "-0.5px" }}>Hoạt động</h1>
-          {isPrimaryDown && (
-            <div style={{
-              marginTop: 12, background: "#fffbeb", color: "#b45309", padding: "12px 16px",
-              borderRadius: 12, display: "flex", gap: 10, alignItems: "center", border: "1px solid #fde68a"
-            }}>
-              <span style={{ fontSize: 18 }}>🛡️</span>
-              <p style={{ fontSize: 12, fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
-                Chế độ An toàn: Đang đọc dữ liệu từ máy chủ dự phòng (Replica).
-              </p>
-            </div>
-          )}
+      {/* Route inputs */}
+      <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Pickup input */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: isPickup ? C.blueLight : C.bg,
+          borderRadius: 10, padding: "10px 12px",
+          border: `1px solid ${isPickup ? C.blue : C.border}`,
+        }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: C.blue, display: "block", flexShrink: 0 }} />
+          {isPickup
+            ? <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
+              placeholder="Tìm điểm đón..." style={{ flex: 1, border: "none", outline: "none", fontSize: 13, fontWeight: 500, background: "transparent", color: C.textMain }} />
+            : <span style={{ flex: 1, fontSize: 13, color: C.textMuted }}>{pickup?.name || "Vị trí hiện tại"}</span>
+          }
+          {isPickup && query && <span onClick={() => setQuery("")} style={{ cursor: "pointer", fontSize: 13, color: C.textMuted }}>✕</span>}
         </div>
 
-        {/* Danh sách chuyến đi */}
-        <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
-          {userRides.map((trip, idx) => (
-            <div key={trip.id} style={{
-              background: "white", borderRadius: 20, padding: "20px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.03)", border: `1px solid ${C.border}`,
-              animation: `fadeIn 0.4s ease-out ${idx * 0.1}s both`
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.blueLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🚗</div>
-                  <div>
-                    <h3 style={{ fontSize: 16, fontWeight: 800, color: C.textMain }}>{trip.dropoff}</h3>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: C.textMuted }}>{trip.date} • {trip.region}</span>
-                  </div>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: C.textMain }}>{trip.price}</div>
-              </div>
-
-              <div style={{ background: C.background, borderRadius: 12, padding: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: C.success }} />
-                  <span style={{ fontSize: 12, color: C.textMain, fontWeight: 700 }}>{trip.status}</span>
-                </div>
-                {isPrimaryDown && <span style={{ fontSize: 11, fontStyle: "italic", color: C.textMuted, fontWeight: 600 }}>Replica Data</span>}
-              </div>
-            </div>
-          ))}
-          {userRides.length === 0 && (
-            <div style={{ textAlign: 'center', padding: "40px 20px" }}>
-              <span style={{ fontSize: 40, opacity: 0.5 }}>📭</span>
-              <p style={{ color: C.textMuted, marginTop: 12, fontSize: 15, fontWeight: 500 }}>Chưa có chuyến đi nào được ghi nhận.</p>
-            </div>
-          )}
+        {/* Divider dots */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, marginLeft: 16 }}>
+          {[0, 1, 2].map(i => <span key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: C.border, display: "block" }} />)}
         </div>
-      </main>
-      <GlassNav active="activity" onNav={onNav} />
+
+        {/* Dropoff input */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: !isPickup ? C.pinkLight : C.bg,
+          borderRadius: 10, padding: "10px 12px",
+          border: `1px solid ${!isPickup ? C.pink : C.border}`,
+        }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: C.pink, display: "block", flexShrink: 0 }} />
+          {!isPickup
+            ? <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
+              placeholder="Tìm điểm đến..." style={{ flex: 1, border: "none", outline: "none", fontSize: 13, fontWeight: 500, background: "transparent", color: C.textMain }} />
+            : <span style={{ flex: 1, fontSize: 13, color: C.textMuted }}>{dropoff?.name || "Điểm đến"}</span>
+          }
+          {!isPickup && query && <span onClick={() => setQuery("")} style={{ cursor: "pointer", fontSize: 13, color: C.textMuted }}>✕</span>}
+        </div>
+      </div>
+
+      {/* Suggestions */}
+      <div style={{ padding: "0 14px" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+          {query ? "Kết quả tìm kiếm" : "Địa điểm phổ biến"}
+        </div>
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "24px 0", color: C.textMuted, fontSize: 13 }}>Không tìm thấy địa điểm</div>
+        )}
+        {filtered.map((p, i) => (
+          <div key={i} onClick={() => onSelect(p)} style={{
+            display: "flex", alignItems: "center", gap: 12, padding: "11px 0",
+            borderBottom: `1px solid ${C.border}`, cursor: "pointer",
+          }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+              {p.icon}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.textMain, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+              <div style={{ fontSize: 11, color: C.textMuted, marginTop: 1 }}>{p.addr}</div>
+            </div>
+            <span style={{ fontSize: 10, color: C.textMuted, flexShrink: 0, paddingLeft: 8 }}>{p.cat}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
-// ─── ROOT APP & DEV TOOLS PANEL ───────────────────────────────────────────────
+// ─── HOME SCREEN ──────────────────────────────────────────────────────────────
+const HomeScreen = ({ user, db, pickup, dropoff, selRide, onOpenSearch, onSelectRide, onConfirm }) => {
+  const k = user.region.toLowerCase();
+  const canWrite = db[k + "_primary"];
+  const canRead = db[k + "_primary"] || db[k + "_replica"];
+  const hasRoute = !!dropoff;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <TopBar user={user} db={db} />
+      <DBStatusBar db={db} region={user.region} />
+
+      {/* Map */}
+      <div style={{ height: 220, background: C.bg, position: "relative", overflow: "hidden" }}>
+        <MapSVG showRoute={hasRoute} error={!canRead} />
+        <button style={{ position: "absolute", right: 12, bottom: 12, width: 36, height: 36, borderRadius: "50%", background: C.surface, border: `1px solid ${C.border}`, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
+          📍
+        </button>
+      </div>
+
+      {/* Bottom sheet */}
+      <div style={{ background: C.surface, borderRadius: "18px 18px 0 0", marginTop: -16, position: "relative", zIndex: 5 }}>
+        <div style={{ width: 36, height: 3, background: C.border, borderRadius: 2, margin: "10px auto 14px" }} />
+
+        {/* Route card */}
+        <div style={{ margin: "0 14px 12px", background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
+          {/* Pickup */}
+          <div onClick={() => onOpenSearch("pickup")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer" }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.blueLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>🔵</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10, color: C.textMuted, marginBottom: 1 }}>Điểm đón</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.textMain, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pickup?.name || "Vị trí hiện tại"}</div>
+            </div>
+            <span style={{ fontSize: 12, color: C.textMuted }}>✏️</span>
+          </div>
+
+          {/* Divider with line */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px" }}>
+            <div style={{ width: 28, display: "flex", justifyContent: "center" }}>
+              <div style={{ width: 1.5, height: 16, background: C.border }} />
+            </div>
+            <div style={{ flex: 1, height: 1, background: C.border }} />
+          </div>
+
+          {/* Dropoff */}
+          <div onClick={() => onOpenSearch("dropoff")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer" }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.pinkLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>🔴</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10, color: C.textMuted, marginBottom: 1 }}>Điểm đến</div>
+              <div style={{ fontSize: 13, fontWeight: hasRoute ? 600 : 400, color: hasRoute ? C.textMain : C.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {dropoff?.name || "Bạn muốn đến đâu?"}
+              </div>
+            </div>
+            <span style={{ fontSize: 12, color: C.textMuted }}>✏️</span>
+          </div>
+        </div>
+
+        {/* Warnings */}
+        {!canRead && (
+          <div style={{ margin: "0 14px 12px", background: C.errorLight, border: `1px solid #fecaca`, borderRadius: 10, padding: "10px 12px", fontSize: 11, color: "#991b1b", fontWeight: 600 }}>
+            ✕ Mất kết nối toàn bộ DB khu vực {user.region}
+          </div>
+        )}
+        {canRead && !canWrite && (
+          <div style={{ margin: "0 14px 12px", background: C.warningLight, border: `1px solid #fde68a`, borderRadius: 10, padding: "10px 12px", fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+            ⚠️ Primary offline — Chỉ đọc từ Replica. Đặt xe tạm thời bị tắt.
+          </div>
+        )}
+
+        {/* Ride types */}
+        {hasRoute && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, padding: "0 14px 12px" }}>
+            {RIDE_TYPES.map(r => (
+              <div key={r.id} onClick={() => onSelectRide(r.id)} style={{
+                padding: "10px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center",
+                border: selRide === r.id ? `1.5px solid ${C.primary}` : `1px solid ${C.border}`,
+                background: selRide === r.id ? C.bg : C.surface,
+                transition: "all 0.15s",
+              }}>
+                <div style={{ fontSize: 22, marginBottom: 4 }}>{r.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textMain }}>{r.name}</div>
+                <div style={{ fontSize: 10, color: C.textMuted, margin: "2px 0" }}>{r.eta}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.blue }}>{fmtPrice(r.base)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Book button */}
+        <div style={{ padding: "0 14px 14px" }}>
+          <button onClick={hasRoute && canWrite ? onConfirm : undefined} style={{
+            width: "100%", height: 50, borderRadius: 12, border: "none", fontSize: 15, fontWeight: 700,
+            cursor: hasRoute && canWrite ? "pointer" : "not-allowed",
+            background: hasRoute && canWrite ? C.primary : C.bg,
+            color: hasRoute && canWrite ? "white" : C.textMuted,
+          }}>
+            {!canRead ? "Mất kết nối DB" : !canWrite ? "Hệ thống bảo trì" : !hasRoute ? "Chọn điểm đến để tiếp tục" : "Xác nhận đặt xe"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── CONFIRM SCREEN ───────────────────────────────────────────────────────────
+const ConfirmScreen = ({ user, db, pickup, dropoff, selRide, fare, onBook, onBack }) => {
+  const ride = RIDE_TYPES.find(r => r.id === selRide) || RIDE_TYPES[1];
+  const dist = Math.max(2, Math.round((fare - ride.base) / 4000));
+  return (
+    <div style={{ background: C.surface }}>
+      <TopBar user={user} db={db} />
+
+      {/* Map with route */}
+      <div style={{ height: 200, background: C.bg, position: "relative", overflow: "hidden" }}>
+        <MapSVG showRoute={true} />
+        <div style={{ position: "absolute", top: 10, left: 10, background: C.surface, borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 600, border: `1px solid ${C.border}` }}>
+          {ride.icon} {ride.name} · {ride.eta}
+        </div>
+      </div>
+
+      {/* Trip info */}
+      <div style={{ padding: "16px 14px 0" }}>
+        {/* Pickup */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 3 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: C.blue, display: "block" }} />
+            <span style={{ width: 1.5, height: 22, background: C.border, display: "block" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.textMain }}>{pickup?.name}</div>
+            <div style={{ fontSize: 11, color: C.textMuted }}>{pickup?.addr || user.province}</div>
+          </div>
+        </div>
+        {/* Dropoff */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: C.pink, display: "block", marginTop: 3, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.textMain }}>{dropoff?.name}</div>
+            <div style={{ fontSize: 11, color: C.textMuted }}>{dropoff?.addr}</div>
+          </div>
+        </div>
+
+        <div style={{ height: 1, background: C.border, margin: "0 0 12px" }} />
+
+        {/* Fare breakdown */}
+        {[
+          { label: "Khoảng cách", val: `~${dist} km` },
+          { label: "Loại xe", val: `${ride.icon} ${ride.name}` },
+          { label: "Thanh toán", val: "💵 Tiền mặt" },
+        ].map(row => (
+          <div key={row.label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: C.textMuted }}>{row.label}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.textMain }}>{row.val}</span>
+          </div>
+        ))}
+
+        <div style={{ height: 1, background: C.border, margin: "10px 0" }} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: C.textMain }}>Tổng cộng</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: C.primary }}>{fmtPrice(fare)}</span>
+        </div>
+      </div>
+
+      <div style={{ padding: "0 14px 10px" }}>
+        <button onClick={onBook} style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: C.primary, color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>
+          Đặt xe ngay · {fmtPrice(fare)}
+        </button>
+        <button onClick={onBack} style={{ width: "100%", height: 44, borderRadius: 12, border: `1px solid ${C.border}`, background: "transparent", color: C.textMain, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          Quay lại
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── DRIVING SCREEN ───────────────────────────────────────────────────────────
+const DrivingScreen = ({ user, db, pickup, dropoff, selRide, fare, driver, onComplete, onCancel, onNav }) => {
+  const ride = RIDE_TYPES.find(r => r.id === selRide) || RIDE_TYPES[1];
+  return (
+    <div>
+      <TopBar user={user} db={db} />
+
+      <div style={{ height: 220, background: C.bg, position: "relative", overflow: "hidden" }}>
+        <MapSVG showRoute={true} />
+        <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", background: C.blue, color: "white", borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
+          Tài xế đang đến · {ride.eta}
+        </div>
+      </div>
+
+      <DBStatusBar db={db} region={user.region} />
+
+      {/* Driver card */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "14px 14px 0", background: C.bg, borderRadius: 12, padding: "14px", border: `1px solid ${C.border}` }}>
+        <div style={{ width: 46, height: 46, borderRadius: "50%", background: C.blueLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
+          {driver.icon}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.textMain }}>{driver.name}</div>
+          <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>🚗 {driver.plate} · {driver.vehicle}</div>
+          <div style={{ fontSize: 11, color: "#b45309", marginTop: 2 }}>★ {driver.rating}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.primary }}>{fmtPrice(fare)}</div>
+          <div style={{ fontSize: 10, color: C.textMuted, marginTop: 2 }}>{ride.name}</div>
+        </div>
+      </div>
+
+      {/* Route summary */}
+      <div style={{ margin: "10px 14px 0", padding: "12px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 6 }}>Lộ trình</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12 }}>🔵</span>
+          <span style={{ fontSize: 12, color: C.textMuted, flex: 1 }}>{pickup?.name}</span>
+        </div>
+        <div style={{ width: 1, height: 10, background: C.border, margin: "3px 0 3px 6px" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12 }}>🔴</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: C.textMain, flex: 1 }}>{dropoff?.name}</span>
+        </div>
+      </div>
+
+      <div style={{ padding: "14px 14px 8px" }}>
+        <button onClick={onComplete} style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: C.success, color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>
+          ✓ Hoàn thành chuyến đi
+        </button>
+        <button onClick={onCancel} style={{ width: "100%", height: 44, borderRadius: 12, border: `1px solid ${C.border}`, background: "transparent", color: C.textMain, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          Hủy chuyến
+        </button>
+      </div>
+      <NavBar active="home" onNav={onNav} />
+    </div>
+  );
+};
+
+// ─── HISTORY SCREEN ───────────────────────────────────────────────────────────
+const HistoryScreen = ({ user, db, rides, onNav }) => {
+  const k = user.region.toLowerCase();
+  const canWrite = db[k + "_primary"];
+  const src = db[k + "_primary"] ? "Primary" : db[k + "_replica"] ? "Replica" : null;
+  const userRides = rides.filter(r => r.userId === user.id).slice().reverse();
+
+  return (
+    <div style={{ background: C.surface, minHeight: "100%" }}>
+      <TopBar user={user} db={db} />
+      <DBStatusBar db={db} region={user.region} />
+
+      <div style={{ padding: "14px 14px 8px", borderBottom: `1px solid ${C.border}` }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textMain, margin: 0 }}>Lịch sử chuyến đi</h2>
+        {!canWrite && src && (
+          <div style={{ marginTop: 8, background: C.warningLight, border: `1px solid #fde68a`, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+            🛡️ Chế độ an toàn — đang đọc từ {src}
+          </div>
+        )}
+      </div>
+
+      <div style={{ padding: "8px 14px 80px" }}>
+        {userRides.length === 0 && (
+          <div style={{ textAlign: "center", padding: "40px 0", color: C.textMuted }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
+            <div style={{ fontSize: 13 }}>Chưa có chuyến đi nào</div>
+          </div>
+        )}
+        {userRides.map((trip, i) => (
+          <div key={i} style={{ padding: "14px 0", borderBottom: `1px solid ${C.border}`, display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: C.blueLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+              {trip.rideIcon}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.textMain }}>{trip.dropoff}</div>
+              <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{trip.pickup} → {trip.dropoff}</div>
+              <div style={{ fontSize: 11, color: C.textMuted }}>{trip.date}</div>
+              <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: C.successLight, color: "#065f46", fontWeight: 600, display: "inline-block", marginTop: 4 }}>
+                Hoàn thành
+              </span>
+            </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>{trip.price}</div>
+              <div style={{ fontSize: 10, color: C.textMuted, marginTop: 2, fontStyle: "italic" }}>{trip.source} data</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <NavBar active="activity" onNav={onNav} />
+    </div>
+  );
+};
+
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function MobileApp() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [rides, setRides] = useState([]);
-  const [isPrimaryDown, setIsPrimaryDown] = useState(false);
-  const [screen, setScreen] = useState("home");
   const [loading, setLoading] = useState(true);
 
-  // ── Load users từ DB khi khởi động ──
+  // 4 DB states
+  const [db, setDb] = useState({
+    south_primary: true,
+    south_replica: true,
+    north_primary: true,
+    north_replica: true,
+  });
+
+  // Booking state
+  const [screen, setScreen] = useState("home"); // home | search | confirm | driving | activity
+  const [searchFor, setSearchFor] = useState(null); // "pickup" | "dropoff"
+  const [pickup, setPickup] = useState(null);
+  const [dropoff, setDropoff] = useState(null);
+  const [selRide, setSelRide] = useState("eco");
+  const [fare, setFare] = useState(0);
+  const [activeDriver, setActiveDriver] = useState(null);
+  const [rides, setRides] = useState([]);
+
+  // Load users
   useEffect(() => {
     fetch(`${API}/users`)
       .then(res => res.json())
       .then(data => {
-        const mapped = data.map(u => ({
-          id: u.id,
-          full_name: u.fullName,
-          province: u.province,
-          region: u.region,
-        }));
+        const mapped = data.map(u => ({ id: u.id, full_name: u.fullName, province: u.province, region: u.region }));
         setUsers(mapped);
-        if (mapped.length > 0) setCurrentUser(mapped[0]);
+        if (mapped.length > 0) {
+          setCurrentUser(mapped[0]);
+          setPickup({ name: "Vị trí hiện tại", addr: mapped[0].province });
+        }
       })
       .catch(() => {
-        // fallback nếu backend chưa sẵn
         const fallback = [
-          { id: 1, full_name: 'Nguyen Van A', province: 'hồ chí minh', region: 'SOUTH' },
-          { id: 2, full_name: 'Tran Thi B', province: 'bình dương', region: 'SOUTH' },
-          { id: 3, full_name: 'Le Van C', province: 'hà nội', region: 'NORTH' },
-          { id: 4, full_name: 'Pham Thi D', province: 'hải phòng', region: 'NORTH' },
+          { id: 1, full_name: "Nguyen Van A", province: "Hồ Chí Minh", region: "SOUTH" },
+          { id: 2, full_name: "Tran Thi B", province: "Bình Dương", region: "SOUTH" },
+          { id: 3, full_name: "Le Van C", province: "Hà Nội", region: "NORTH" },
+          { id: 4, full_name: "Pham Thi D", province: "Hải Phòng", region: "NORTH" },
         ];
         setUsers(fallback);
         setCurrentUser(fallback[0]);
+        setPickup({ name: "Vị trí hiện tại", addr: fallback[0].province });
       })
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Load lịch sử chuyến đi khi đổi user ──
-  const loadHistory = useCallback((user) => {
+  // Load history
+  const loadHistory = useCallback(async (user) => {
     if (!user) return;
-    fetch(`${API}/rides/history/${user.id}?province=${encodeURIComponent(user.province)}&isReadOnly=true`)
-      .then(res => res.json())
-      .then(data => {
-        const mapped = data.map(r => ({
-          id: r.id,
-          user_id: r.userId,
-          pickup: r.pickup,
-          dropoff: r.dropoff,
-          price: r.price || '—',
-          status: r.status,
-          region: r.region,
-          date: r.createdAt ? new Date(r.createdAt).toLocaleString('vi-VN') : 'Không rõ',
-        }));
-        setRides(mapped);
-      })
-      .catch(() => setRides([]));
+    try {
+      const res = await fetch(`${API}/rides/history/${user.id}?province=${encodeURIComponent(user.province)}&isReadOnly=true`);
+      const data = await res.json();
+      const mapped = data.map(r => ({
+        id: r.id,
+        userId: r.userId,
+        pickup: r.pickup,
+        dropoff: r.dropoff,
+        price: r.price || "—",
+        rideIcon: "🚗",
+        status: r.status,
+        region: r.region,
+        source: "primary",
+        date: r.createdAt ? new Date(r.createdAt).toLocaleString("vi-VN", {
+          hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric",
+        }) : "Không rõ",
+      }));
+      setRides(mapped.sort((a, b) => b.id - a.id));
+    } catch {
+      setRides([]);
+    }
   }, []);
 
-  useEffect(() => {
-    loadHistory(currentUser);
-  }, [currentUser, loadHistory]);
+  useEffect(() => { loadHistory(currentUser); }, [currentUser, loadHistory]);
 
-  const handleNav = id => setScreen(id);
+  const toggleDB = (key) => setDb(prev => ({ ...prev, [key]: !prev[key] }));
 
-  // ── Đổi user → reset mọi thứ ──
-  const handleChangeUser = (userId) => {
-    const user = users.find(u => u.id === parseInt(userId));
+  const handleChangeUser = (id) => {
+    const user = users.find(u => u.id === id);
     if (user) {
       setCurrentUser(user);
-      setIsPrimaryDown(false);
+      setPickup({ name: "Vị trí hiện tại", addr: user.province });
+      setDropoff(null);
       setScreen("home");
     }
   };
 
-  // ── Book ride → gọi POST API thực ──
-  const handleBookRide = async (pickup, dropoff, type) => {
-    if (isPrimaryDown) { setScreen("error"); return; }
+  const handleOpenSearch = (type) => {
+    setSearchFor(type);
+    setScreen("search");
+  };
 
-    const prices = { bike: '25.000đ', eco: '55.000đ', premium: '85.000đ' };
-    const body = {
-      userId: currentUser.id,
-      pickup,
-      dropoff,
-      status: 'PENDING',
-      region: currentUser.region,
-      price: prices[type],
-    };
+  const handleSelectPlace = (place) => {
+    if (searchFor === "pickup") setPickup(place);
+    else setDropoff(place);
+    setScreen("home");
+  };
 
+  const handleConfirm = () => {
+    const ride = RIDE_TYPES.find(r => r.id === selRide) || RIDE_TYPES[1];
+    setFare(calcFare(ride.base));
+    setScreen("confirm");
+  };
+
+  const handleBook = async () => {
+    const k = currentUser.region.toLowerCase();
+    if (!db[k + "_primary"]) { setScreen("home"); return; }
+
+    const ride = RIDE_TYPES.find(r => r.id === selRide) || RIDE_TYPES[1];
+    const driver = MOCK_DRIVERS[Math.floor(Math.random() * MOCK_DRIVERS.length)];
+    setActiveDriver(driver);
+    setScreen("driving");
+
+    // POST to backend
     try {
-      const res = await fetch(`${API}/rides/book?province=${encodeURIComponent(currentUser.province)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+      await fetch(`${API}/rides/book?province=${encodeURIComponent(currentUser.province)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          pickup: pickup?.name,
+          dropoff: dropoff?.name,
+          status: "COMPLETED",
+          region: currentUser.region,
+          price: fmtPrice(fare),
+        }),
       });
-
-      if (!res.ok) throw new Error('Lỗi server');
-      await loadHistory(currentUser);
-      setScreen("activity");
     } catch {
-      setScreen("error");
+      // Fail silently — vẫn cho trải nghiệm UI
     }
+  };
+
+  const handleComplete = async () => {
+    const ride = RIDE_TYPES.find(r => r.id === selRide) || RIDE_TYPES[1];
+    const k = currentUser.region.toLowerCase();
+    const src = db[k + "_primary"] ? "primary" : "replica";
+    const newRide = {
+      id: Date.now(),
+      userId: currentUser.id,
+      pickup: pickup?.name,
+      dropoff: dropoff?.name,
+      price: fmtPrice(fare),
+      rideIcon: ride.icon,
+      status: "COMPLETED",
+      region: currentUser.region,
+      source: src,
+      date: new Date().toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }),
+    };
+    setRides(prev => [newRide, ...prev]);
+    setDropoff(null);
+    setActiveDriver(null);
+    setScreen("activity");
+  };
+
+  const handleCancel = () => {
+    setActiveDriver(null);
+    setScreen("home");
   };
 
   if (loading || !currentUser) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f3f4f6', fontFamily: 'Inter, sans-serif', color: '#6b7280', flexDirection: 'column', gap: 16 }}>
-        <span style={{ fontSize: 40 }}>🚗</span>
-        <span style={{ fontWeight: 700, fontSize: 16 }}>Đang kết nối database...</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: C.bg, flexDirection: "column", gap: 12 }}>
+        <span style={{ fontSize: 36 }}>🚗</span>
+        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "Inter, sans-serif", color: C.textMain }}>Đang kết nối database...</span>
       </div>
     );
   }
@@ -439,68 +761,73 @@ export default function MobileApp() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background: #e5e7eb; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.8); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .phone-frame { 
-          width: 100%; max-width: 400px; height: 850px; max-height: 100vh; 
-          background: #ffffff; position: relative; overflow-x: hidden; 
-          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-          border-radius: 40px; border: 8px solid #1f2937; margin: 20px auto;
+        body { background: #cbd5e1; }
+        .phone-frame {
+          width: 100%; max-width: 400px; margin: 16px auto;
+          background: #ffffff; position: relative;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+          border-radius: 36px; border: 6px solid #1e293b;
           overflow: hidden;
         }
-        
-        /* Giao diện Dev Tools Panel cho Giảng viên */
-        .dev-panel {
-          background: #0f172a; padding: 12px 20px; display: flex; 
-          justify-content: space-between; alignItems: center;
-          border-bottom: 2px solid #334155; z-index: 100; position: relative;
+        @media (max-width: 480px) {
+          .phone-frame { max-width: 100%; margin: 0; border: none; border-radius: 0; }
         }
-        
-        @media (max-width: 480px) { 
-          .phone-frame { max-width: 100%; height: 100vh; border: none; border-radius: 0; margin: 0; } 
-        }
+        input::placeholder { color: #94a3b8; }
+        button:active { opacity: 0.85; transform: scale(0.98); }
       `}</style>
 
-      <div className="phone-wrapper">
-        <div className="phone-frame">
+      <div className="phone-frame">
+        <DevPanel users={users} currentUser={currentUser} db={db} onToggleDB={toggleDB} onChangeUser={handleChangeUser} />
 
-          {/* 🛠️ DEV TOOLS PANEL - CÔNG CỤ DÀNH CHO GIẢNG VIÊN */}
-          <div className="dev-panel">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ color: '#94a3b8', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>Control Panel • Live DB</span>
-              <select
-                value={currentUser.id}
-                onChange={e => handleChangeUser(e.target.value)}
-                style={{ background: "#1e293b", color: "#f8fafc", border: "1px solid #475569", padding: "6px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
-              >
-                {users.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.region})</option>)}
-              </select>
-            </div>
-
-            <button
-              onClick={() => setIsPrimaryDown(!isPrimaryDown)}
-              style={{
-                padding: "8px 12px", borderRadius: 8, border: "none", fontSize: 11, fontWeight: 800, cursor: "pointer",
-                background: isPrimaryDown ? "#ef4444" : "#10b981", color: "white",
-                boxShadow: isPrimaryDown ? "0 4px 12px rgba(239, 68, 68, 0.4)" : "0 4px 12px rgba(16, 185, 129, 0.4)",
-                transition: "all 0.2s"
-              }}
-            >
-              {isPrimaryDown ? '🔴 OFF' : '🟢 PRIMARY ON'}
-            </button>
-          </div>
-
-          {/* MÀN HÌNH CHÍNH APP */}
-          <div style={{ position: "relative", height: "calc(100% - 62px)", overflowY: "auto", overflowX: "hidden" }}>
-            {screen === "home" && <HomeScreen onNav={handleNav} user={currentUser} isPrimaryDown={isPrimaryDown} onBookRide={handleBookRide} />}
-            {screen === "error" && <ErrorScreen onNav={handleNav} user={currentUser} />}
-            {screen === "activity" && <TripHistoryScreen onNav={handleNav} user={currentUser} rides={rides} isPrimaryDown={isPrimaryDown} />}
-          </div>
-
+        <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 120px)" }}>
+          {screen === "home" && (
+            <HomeScreen
+              user={currentUser} db={db}
+              pickup={pickup} dropoff={dropoff}
+              selRide={selRide}
+              onOpenSearch={handleOpenSearch}
+              onSelectRide={setSelRide}
+              onConfirm={handleConfirm}
+            />
+          )}
+          {screen === "search" && (
+            <SearchScreen
+              searchFor={searchFor}
+              pickup={pickup} dropoff={dropoff}
+              region={currentUser.region}
+              onSelect={handleSelectPlace}
+              onBack={() => setScreen("home")}
+            />
+          )}
+          {screen === "confirm" && (
+            <ConfirmScreen
+              user={currentUser} db={db}
+              pickup={pickup} dropoff={dropoff}
+              selRide={selRide} fare={fare}
+              onBook={handleBook}
+              onBack={() => setScreen("home")}
+            />
+          )}
+          {screen === "driving" && activeDriver && (
+            <DrivingScreen
+              user={currentUser} db={db}
+              pickup={pickup} dropoff={dropoff}
+              selRide={selRide} fare={fare}
+              driver={activeDriver}
+              onComplete={handleComplete}
+              onCancel={handleCancel}
+              onNav={setScreen}
+            />
+          )}
+          {screen === "activity" && (
+            <HistoryScreen
+              user={currentUser} db={db}
+              rides={rides}
+              onNav={setScreen}
+            />
+          )}
         </div>
       </div>
     </>
