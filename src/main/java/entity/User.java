@@ -1,4 +1,4 @@
-package com.rideapp.entity;  // ✅ sửa package
+package entity;  
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

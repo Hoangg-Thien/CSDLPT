@@ -1,6 +1,6 @@
-package com.rideapp.repository;
+package repository;
 
-import com.rideapp.entity.Driver;
+import entity.Driver;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 

@@ -7,17 +7,23 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import java.util.TimeZone;
 
-@SpringBootApplication
-@ComponentScan(basePackages = { "com.rideapp", "config", "controller", "exception", "routing", "service" })
+@SpringBootApplication(exclude = {
+    org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
+})
+@ComponentScan(basePackages = {
+    "com.rideapp", "config", "controller",
+    "exception", "routing", "service", "repository"
+})
 @EntityScan(basePackages = { "entity" })
-@EnableJpaRepositories(basePackages = { "repository" })
+@EnableJpaRepositories(
+    basePackages = { "repository" },
+    entityManagerFactoryRef = "entityManagerFactory",
+    transactionManagerRef = "transactionManager"
+)
 public class RideAppApplication {
-
-	public static void main(String[] args) {
-		// Ép toàn bộ app Java dùng múi giờ chuẩn
-		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-
-		SpringApplication.run(RideAppApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        SpringApplication.run(RideAppApplication.class, args);
+    }
 }

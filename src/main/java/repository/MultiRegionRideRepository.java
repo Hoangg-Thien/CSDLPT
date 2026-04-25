@@ -1,6 +1,6 @@
-package com.rideapp.repository;
+package repository;
 
-import com.rideapp.entity.Ride;
+import entity.Ride;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 

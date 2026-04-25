@@ -1,4 +1,4 @@
-package com.rideapp.repository;
+package repository;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
