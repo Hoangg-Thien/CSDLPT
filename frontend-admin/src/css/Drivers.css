@@ -1,15 +1,15 @@
-.trips-page {
+.drivers-page {
   padding: 1.5rem;
 }
 
-.trips-header {
+.drivers-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
 }
 
-.trips-header h2 {
+.drivers-header h2 {
   font-size: 18px;
   font-weight: 500;
 }
@@ -64,7 +64,31 @@ tr:hover td {
   font-weight: 500;
 }
 
-.status.completed { background: #EAF3DE; color: #3B6D11; }
-.status.pending   { background: #FAEEDA; color: #854F0B; }
-.status.ongoing   { background: #E6F1FB; color: #185FA5; }
-.status.cancelled { background: #FCEBEB; color: #A32D2D; }  
+.status.available { background: #EAF3DE; color: #3B6D11; }
+.status.busy      { background: #FCEBEB; color: #A32D2D; }
+
+.total-count {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #f7f7f5;
+  color: #888;
+  border: 0.5px solid #e0e0e0;
+}
+
+.region-divider td {
+  background: #f7f7f5;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 0.5px solid #e0e0e0;
+}
+
+.mono {
+  font-family: monospace;
+  font-size: 13px;
+  color: #888;
+}

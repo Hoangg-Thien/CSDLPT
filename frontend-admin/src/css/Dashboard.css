@@ -96,3 +96,13 @@
   background: #fef3c7;
   color: #d97706;
 }
+.empty {
+  color: #aaa;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.green-text  { color: #3B6D11; }
+.red-text    { color: #A32D2D; }
+.blue-text   { color: #185FA5; }
+.yellow-text { color: #854F0B; }
