@@ -21,9 +21,9 @@ export default function Dashboard() {
   // Stats tính từ data thật
   const availableDrivers = drivers.filter(d => d.isAvailable).length;
   const busyDrivers = drivers.filter(d => !d.isAvailable).length;
-  const runningTrips = trips.filter(t => t.status === "ongoing").length;
-  const pendingTrips = trips.filter(t => t.status === "pending").length;
-  const completedTrips = trips.filter(t => t.status === "completed").length;
+  const runningTrips   = trips.filter(t => t.status?.toLowerCase() === "ongoing").length;
+  const pendingTrips   = trips.filter(t => t.status?.toLowerCase() === "pending").length;
+  const completedTrips = trips.filter(t => t.status?.toLowerCase() === "completed").length;
 
   // 5 trips gần nhất
   const recentTrips = [...trips].slice(-5).reverse();
@@ -76,7 +76,7 @@ export default function Dashboard() {
               recentTrips.map(t => (
                 <div className="recent-item" key={`${t.region}-${t.id}`}>
                   <span>{t.pickup} → {t.dropoff}</span>
-                  <span className={`badge ${t.status}`}>{t.status}</span>
+                  <span className={`badge ${t.status?.toLowerCase()}`}>{t.status}</span>
                 </div>
               ))
             )}
