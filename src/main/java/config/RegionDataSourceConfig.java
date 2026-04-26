@@ -1,4 +1,4 @@
-package com.rideapp.config;
+package config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -10,13 +10,19 @@ import javax.sql.DataSource;
 @Configuration
 public class RegionDataSourceConfig {
 
-    @Value("${app.regions.south.primary-url}") String southUrl;
-    @Value("${app.regions.south.username}")    String southUser;
-    @Value("${app.regions.south.password}")    String southPass;
+    @Value("${app.regions.south.primary-url}")
+    String southUrl;
+    @Value("${app.regions.south.username}")
+    String southUser;
+    @Value("${app.regions.south.password}")
+    String southPass;
 
-    @Value("${app.regions.north.primary-url}") String northUrl;
-    @Value("${app.regions.north.username}")    String northUser;
-    @Value("${app.regions.north.password}")    String northPass;
+    @Value("${app.regions.north.primary-url}")
+    String northUrl;
+    @Value("${app.regions.north.username}")
+    String northUser;
+    @Value("${app.regions.north.password}")
+    String northPass;
 
     @Bean(name = "southDataSource")
     @Primary
