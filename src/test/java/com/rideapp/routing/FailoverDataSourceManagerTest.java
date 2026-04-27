@@ -1,6 +1,6 @@
-package routing;
+package com.rideapp.routing;
 
-import exception.ServiceUnavailableException;
+import com.rideapp.exception.ServiceUnavailableException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
