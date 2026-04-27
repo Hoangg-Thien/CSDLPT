@@ -1,4 +1,4 @@
-package config;
+package com.rideapp.config;
 
 import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Qualifier;

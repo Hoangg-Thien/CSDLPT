@@ -1,9 +1,8 @@
-package repository;
-
+package com.rideapp.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import entity.Ride;
+import com.rideapp.entity.Ride;
 
 
 @Repository

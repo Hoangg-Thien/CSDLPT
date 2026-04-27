@@ -1,6 +1,5 @@
-package repository;
-
-import entity.User;
+package com.rideapp.repository;
+import com.rideapp.entity.User;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 

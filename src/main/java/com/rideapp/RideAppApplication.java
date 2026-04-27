@@ -11,13 +11,10 @@ import java.util.TimeZone;
     org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
     org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
 })
-@ComponentScan(basePackages = {
-    "com.rideapp", "config", "controller",
-    "exception", "routing", "service", "repository"
-})
-@EntityScan(basePackages = { "entity" })
+@ComponentScan(basePackages = {"com.rideapp"})
+@EntityScan(basePackages = {"com.rideapp.entity"})
 @EnableJpaRepositories(
-    basePackages = { "repository" },
+    basePackages = {"com.rideapp.repository"},
     entityManagerFactoryRef = "entityManagerFactory",
     transactionManagerRef = "transactionManager"
 )

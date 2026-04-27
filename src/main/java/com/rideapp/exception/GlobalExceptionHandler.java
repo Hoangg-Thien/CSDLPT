@@ -1,5 +1,4 @@
-package exception;
-
+package com.rideapp.exception;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import org.springframework.http.HttpStatus;

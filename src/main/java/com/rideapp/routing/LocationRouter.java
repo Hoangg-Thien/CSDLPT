@@ -1,5 +1,4 @@
-package routing;
-
+package com.rideapp.routing;
 import java.text.Normalizer;
 import java.util.Set;
 import org.springframework.stereotype.Component;

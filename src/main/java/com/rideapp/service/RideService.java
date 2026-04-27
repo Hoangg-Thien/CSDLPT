@@ -1,6 +1,6 @@
-package service;
+package com.rideapp.service;
 
-import entity.Ride;
+import com.rideapp.entity.Ride;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,9 +9,9 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
-import routing.FailoverDataSourceManager;
-import routing.LocationRouter;
-import routing.Region;
+import com.rideapp.routing.FailoverDataSourceManager;
+import com.rideapp.routing.LocationRouter;
+import com.rideapp.routing.Region;
 
 @Service
 public class RideService {

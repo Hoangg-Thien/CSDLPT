@@ -1,7 +1,7 @@
-package controller;  
+package com.rideapp.controller;  
 
-import entity.User;
-import repository.MultiRegionUserRepository;
+import com.rideapp.entity.User;
+import com.rideapp.repository.MultiRegionUserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;

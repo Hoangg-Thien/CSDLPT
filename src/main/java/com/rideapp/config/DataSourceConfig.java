@@ -1,4 +1,4 @@
-package config;
+package com.rideapp.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

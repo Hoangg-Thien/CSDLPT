@@ -1,7 +1,7 @@
-package controller;
+package com.rideapp.controller;
 
-import entity.Ride;
-import repository.MultiRegionRideRepository;
+import com.rideapp.entity.Ride;
+import com.rideapp.repository.MultiRegionRideRepository;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 

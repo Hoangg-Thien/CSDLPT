@@ -1,4 +1,4 @@
-package config;
+package com.rideapp.config;
 
 import java.util.List;
 import org.springframework.context.annotation.Bean;

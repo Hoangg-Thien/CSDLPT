@@ -1,5 +1,6 @@
-package config;
+package com.rideapp.config;
 
+import java.util.Properties;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -9,19 +10,18 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
-import java.util.Properties;
 
 @Configuration
 public class JpaConfig {
 
     @Bean(name = "entityManagerFactory")
-    @DependsOn({"flywaySouth", "flywayNorth"})  // ✅ chờ Flyway chạy xong
+    @DependsOn({"flywaySouth", "flywayNorth"})
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             @Qualifier("southPrimaryDS") DataSource dataSource) {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("entity");
+        em.setPackagesToScan("com.rideapp.entity");
 
         HibernateJpaVendorAdapter adapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(adapter);

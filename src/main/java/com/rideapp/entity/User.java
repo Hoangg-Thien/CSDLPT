@@ -1,5 +1,4 @@
-package entity;  
-
+package com.rideapp.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
