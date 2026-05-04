@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo 
+set -euo pipefail
 
 : "${PRIMARY_HOST:?PRIMARY_HOST is required}"
 : "${PRIMARY_PORT:=5432}"
