@@ -78,6 +78,91 @@ public class RideService {
         }
     }
 
+    public Ride bookRideWithDriver(
+            Ride ride,
+            boolean isReadOnly,
+            String province,
+            Double latitude,
+            Double longitude) {
+        Region region = resolveRegion(ride.getRegion(), province, latitude, longitude);
+        
+        try (Connection connection = failoverDataSourceManager.getConnection(region, false)) {
+            String findDriverSql = "SELECT id FROM drivers WHERE region = ? AND is_available = true LIMIT 1";
+            Long driverId = null;
+            try (PreparedStatement findStmt = connection.prepareStatement(findDriverSql)) {
+                findStmt.setString(1, region.name());
+                try (ResultSet rs = findStmt.executeQuery()) {
+                    if (rs.next()) {
+                        driverId = rs.getLong("id");
+                    }
+                }
+            }
+            
+            if (driverId != null) {
+                String updateDriverSql = "UPDATE drivers SET is_available = false WHERE id = ?";
+                try (PreparedStatement updateStmt = connection.prepareStatement(updateDriverSql)) {
+                    updateStmt.setLong(1, driverId);
+                    updateStmt.executeUpdate();
+                }
+                ride.setDriverId(driverId);
+            }
+            
+            String insertRideSql = "INSERT INTO rides (user_id, driver_id, pickup, dropoff, price, status, region) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at";
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertRideSql)) {
+                insertStmt.setLong(1, ride.getUserId());
+                if (driverId == null) {
+                    insertStmt.setNull(2, java.sql.Types.BIGINT);
+                } else {
+                    insertStmt.setLong(2, driverId);
+                }
+                insertStmt.setString(3, ride.getPickup());
+                insertStmt.setString(4, ride.getDropoff());
+                insertStmt.setString(5, ride.getPrice());
+                insertStmt.setString(6, "PENDING");
+                insertStmt.setString(7, region.name());
+                
+                try (ResultSet rs = insertStmt.executeQuery()) {
+                    if (rs.next()) {
+                        ride.setId(rs.getLong("id"));
+                        Timestamp createdAt = rs.getTimestamp("created_at");
+                        if (createdAt != null) ride.setCreatedAt(createdAt.toLocalDateTime());
+                    }
+                }
+            }
+            ride.setRegion(region.name());
+            ride.setStatus("PENDING");
+            return ride;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to book ride with driver", ex);
+        }
+    }
+
+    public void completeRide(Long rideId, String regionStr) {
+        Region region = parseExplicitRegion(regionStr);
+        String findRideSql = "SELECT driver_id FROM rides WHERE id = ?";
+        Long driverId = null;
+        
+        try (Connection conn = failoverDataSourceManager.getConnection(region, false);
+             PreparedStatement findStmt = conn.prepareStatement(findRideSql)) {
+            findStmt.setLong(1, rideId);
+            try (ResultSet rs = findStmt.executeQuery()) {
+                if (rs.next()) driverId = rs.getLong("driver_id");
+            }
+            if (driverId != null) {
+                String updateRide = "UPDATE rides SET status = 'COMPLETED' WHERE id = ?";
+                try (PreparedStatement upd = conn.prepareStatement(updateRide)) {
+                    upd.setLong(1, rideId); upd.executeUpdate();
+                }
+                String updateDriver = "UPDATE drivers SET is_available = true WHERE id = ?";
+                try (PreparedStatement upd = conn.prepareStatement(updateDriver)) {
+                    upd.setLong(1, driverId); upd.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to complete ride", e);
+        }
+    }
+
     public List<Ride> getHistory(
             Long userId,
             Region region,
@@ -92,7 +177,7 @@ public class RideService {
         Region resolvedRegion = resolveRegion(region == null ? null : region.name(), province, latitude, longitude);
 
         String sql = """
-                SELECT id, user_id, driver_id, pickup, dropoff, status, region, created_at
+                SELECT id, user_id, driver_id, pickup, dropoff, price, status, region, created_at
                 FROM rides
                 WHERE user_id = ?
                 ORDER BY created_at DESC
@@ -126,6 +211,7 @@ public class RideService {
 
         ride.setPickup(resultSet.getString("pickup"));
         ride.setDropoff(resultSet.getString("dropoff"));
+        ride.setPrice(resultSet.getString("price"));
         ride.setStatus(resultSet.getString("status"));
         ride.setRegion(resultSet.getString("region"));
 

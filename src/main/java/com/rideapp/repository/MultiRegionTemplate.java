@@ -1,4 +1,5 @@
 package com.rideapp.repository;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -14,8 +15,8 @@ public class MultiRegionTemplate {
     private final JdbcTemplate northJdbc;
 
     public MultiRegionTemplate(
-            @Qualifier("southDataSource") DataSource south,
-            @Qualifier("northDataSource") DataSource north) {
+            @Qualifier("southPrimaryDS") DataSource south,
+            @Qualifier("northPrimaryDS") DataSource north) {
         this.southJdbc = new JdbcTemplate(south);
         this.northJdbc = new JdbcTemplate(north);
     }
@@ -25,5 +26,16 @@ public class MultiRegionTemplate {
         result.addAll(southJdbc.query(sql, mapper));
         result.addAll(northJdbc.query(sql, mapper));
         return result;
+    }
+
+    // 🔥 Đây chính là cái hàm mà Java đang tìm mỏi mắt nãy giờ đây!
+    public void updateByRegion(String region, String sql) {
+        if ("SOUTH".equalsIgnoreCase(region)) {
+            southJdbc.update(sql);
+        } else if ("NORTH".equalsIgnoreCase(region)) {
+            northJdbc.update(sql);
+        } else {
+            throw new IllegalArgumentException("Vùng không hợp lệ: " + region);
+        }
     }
 }

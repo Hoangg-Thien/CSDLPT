@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 set -euo pipefail
 
 : "${PRIMARY_HOST:?PRIMARY_HOST is required}"
