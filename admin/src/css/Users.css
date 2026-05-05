@@ -1,0 +1,97 @@
+.page {
+  padding: 1.5rem;
+}
+
+.page h2 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+
+.table-wrapper {
+  border: 0.5px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.user-table thead {
+  background: #f7f7f5;
+}
+
+.user-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 13px;
+  color: #888;
+  border-bottom: 0.5px solid #e0e0e0;
+}
+
+.user-table td {
+  padding: 11px 14px;
+  color: #1a1a1a;
+  border-bottom: 0.5px solid #e0e0e0;
+}
+
+.user-table tr:last-child td {
+  border-bottom: none;
+}
+
+.user-table tr:hover td {
+  background: #f7f7f5;
+}
+
+/* Region badges */
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.badge.south   { background: #E1F5EE; color: #0F6E56; }
+.badge.north   { background: #E6F1FB; color: #185FA5; }
+.badge.central { background: #FAEEDA; color: #854F0B; }
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.total-count {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #f7f7f5;
+  color: #888;
+  border: 0.5px solid #e0e0e0;
+}
+
+/* Dòng phân chia region */
+.region-divider td {
+  background: #f7f7f5;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 0.5px solid #e0e0e0;
+}
+
+.mono {
+  font-family: monospace;
+  font-size: 13px;
+  color: #888;
+}

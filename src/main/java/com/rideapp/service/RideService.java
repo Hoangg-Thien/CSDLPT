@@ -1,0 +1,247 @@
+package com.rideapp.service;
+
+import com.rideapp.entity.Ride;
+import com.rideapp.routing.RegionResolver;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import com.rideapp.routing.FailoverDataSourceManager;
+import com.rideapp.routing.Region;
+
+@Service
+public class RideService {
+
+    private final FailoverDataSourceManager failoverDataSourceManager;
+    private final RegionResolver regionResolver;
+
+    public RideService(FailoverDataSourceManager failoverDataSourceManager, RegionResolver regionResolver) {
+        this.failoverDataSourceManager = failoverDataSourceManager;
+        this.regionResolver = regionResolver;
+    }
+
+    public Ride bookRide(
+            Ride ride,
+            boolean isReadOnly,
+            String province,
+            Double latitude,
+            Double longitude) {
+        if (isReadOnly) {
+            throw new IllegalArgumentException("bookRide does not allow read-only mode");
+        }
+        if (ride == null) {
+            throw new IllegalArgumentException("ride must not be null");
+        }
+
+        Region region = regionResolver.resolve(ride.getRegion(), province, latitude, longitude);
+
+        String sql = """
+                INSERT INTO rides (user_id, driver_id, pickup, dropoff, status, region)
+                VALUES (?, ?, ?, ?, ?, ?)
+                RETURNING id, created_at
+                """;
+
+        try (Connection connection = failoverDataSourceManager.getConnection(region, false);
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, ride.getUserId());
+            if (ride.getDriverId() == null) {
+                statement.setNull(2, java.sql.Types.BIGINT);
+            } else {
+                statement.setLong(2, ride.getDriverId());
+            }
+            statement.setString(3, ride.getPickup());
+            statement.setString(4, ride.getDropoff());
+            statement.setString(5, ride.getStatus() == null ? "PENDING" : ride.getStatus());
+            statement.setString(6, region.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    ride.setId(resultSet.getLong("id"));
+                    Timestamp createdAt = resultSet.getTimestamp("created_at");
+                    if (createdAt != null) {
+                        ride.setCreatedAt(createdAt.toLocalDateTime());
+                    }
+                }
+            }
+            ride.setRegion(region.name());
+            if (ride.getStatus() == null) {
+                ride.setStatus("PENDING");
+            }
+            return ride;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to book ride", ex);
+        }
+    }
+
+    public Ride bookRideWithDriver(
+            Ride ride,
+            boolean isReadOnly,
+            String province,
+            Double latitude,
+            Double longitude) {
+        Region region = resolveRegion(ride.getRegion(), province, latitude, longitude);
+        
+        try (Connection connection = failoverDataSourceManager.getConnection(region, false)) {
+            String findDriverSql = "SELECT id FROM drivers WHERE region = ? AND is_available = true LIMIT 1";
+            Long driverId = null;
+            try (PreparedStatement findStmt = connection.prepareStatement(findDriverSql)) {
+                findStmt.setString(1, region.name());
+                try (ResultSet rs = findStmt.executeQuery()) {
+                    if (rs.next()) {
+                        driverId = rs.getLong("id");
+                    }
+                }
+            }
+            
+            if (driverId != null) {
+                String updateDriverSql = "UPDATE drivers SET is_available = false WHERE id = ?";
+                try (PreparedStatement updateStmt = connection.prepareStatement(updateDriverSql)) {
+                    updateStmt.setLong(1, driverId);
+                    updateStmt.executeUpdate();
+                }
+                ride.setDriverId(driverId);
+            }
+            
+            String insertRideSql = "INSERT INTO rides (user_id, driver_id, pickup, dropoff, price, status, region) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at";
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertRideSql)) {
+                insertStmt.setLong(1, ride.getUserId());
+                if (driverId == null) {
+                    insertStmt.setNull(2, java.sql.Types.BIGINT);
+                } else {
+                    insertStmt.setLong(2, driverId);
+                }
+                insertStmt.setString(3, ride.getPickup());
+                insertStmt.setString(4, ride.getDropoff());
+                insertStmt.setString(5, ride.getPrice());
+                insertStmt.setString(6, "PENDING");
+                insertStmt.setString(7, region.name());
+                
+                try (ResultSet rs = insertStmt.executeQuery()) {
+                    if (rs.next()) {
+                        ride.setId(rs.getLong("id"));
+                        Timestamp createdAt = rs.getTimestamp("created_at");
+                        if (createdAt != null) ride.setCreatedAt(createdAt.toLocalDateTime());
+                    }
+                }
+            }
+            ride.setRegion(region.name());
+            ride.setStatus("PENDING");
+            return ride;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to book ride with driver", ex);
+        }
+    }
+
+    public void completeRide(Long rideId, String regionStr) {
+        Region region = parseExplicitRegion(regionStr);
+        String findRideSql = "SELECT driver_id FROM rides WHERE id = ?";
+        Long driverId = null;
+        
+        try (Connection conn = failoverDataSourceManager.getConnection(region, false);
+             PreparedStatement findStmt = conn.prepareStatement(findRideSql)) {
+            findStmt.setLong(1, rideId);
+            try (ResultSet rs = findStmt.executeQuery()) {
+                if (rs.next()) driverId = rs.getLong("driver_id");
+            }
+            if (driverId != null) {
+                String updateRide = "UPDATE rides SET status = 'COMPLETED' WHERE id = ?";
+                try (PreparedStatement upd = conn.prepareStatement(updateRide)) {
+                    upd.setLong(1, rideId); upd.executeUpdate();
+                }
+                String updateDriver = "UPDATE drivers SET is_available = true WHERE id = ?";
+                try (PreparedStatement upd = conn.prepareStatement(updateDriver)) {
+                    upd.setLong(1, driverId); upd.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to complete ride", e);
+        }
+    }
+
+    public List<Ride> getHistory(
+            Long userId,
+            Region region,
+            String province,
+            Double latitude,
+            Double longitude,
+            boolean isReadOnly) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId must not be null");
+        }
+
+        Region resolvedRegion = regionResolver.resolve(
+                region == null ? null : region.name(),
+                province,
+                latitude,
+                longitude);
+
+        String sql = """
+                SELECT id, user_id, driver_id, pickup, dropoff, price, status, region, created_at
+                FROM rides
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                """;
+
+        List<Ride> rides = new ArrayList<>();
+        try (Connection connection = failoverDataSourceManager.getConnection(resolvedRegion, isReadOnly);
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, userId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    rides.add(mapRide(resultSet));
+                }
+            }
+            return rides;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to fetch ride history", ex);
+        }
+    }
+
+    private Ride mapRide(ResultSet resultSet) throws SQLException {
+        Ride ride = new Ride();
+        ride.setId(resultSet.getLong("id"));
+        ride.setUserId(resultSet.getLong("user_id"));
+
+        long driverId = resultSet.getLong("driver_id");
+        if (!resultSet.wasNull()) {
+            ride.setDriverId(driverId);
+        }
+
+        ride.setPickup(resultSet.getString("pickup"));
+        ride.setDropoff(resultSet.getString("dropoff"));
+        ride.setPrice(resultSet.getString("price"));
+        ride.setStatus(resultSet.getString("status"));
+        ride.setRegion(resultSet.getString("region"));
+
+        Timestamp createdAt = resultSet.getTimestamp("created_at");
+        if (createdAt != null) {
+            ride.setCreatedAt(createdAt.toLocalDateTime());
+        }
+        return ride;
+    }
+
+    private Region resolveRegion(
+            String explicitRegion,
+            String province,
+            Double latitude,
+            Double longitude) {
+        return regionResolver.resolve(explicitRegion, province, latitude, longitude);
+    }
+
+    private Region parseExplicitRegion(String explicitRegion) {
+        if (explicitRegion == null || explicitRegion.isBlank()) {
+            throw new IllegalArgumentException("region is required");
+        }
+        try {
+            return Region.valueOf(explicitRegion.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Unsupported region: " + explicitRegion, ex);
+        }
+    }
+}
