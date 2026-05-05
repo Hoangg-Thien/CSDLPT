@@ -38,3 +38,7 @@ build/
 !.env.example
 *.log
 logs/
+
+### Admin build outputs ###
+admin/node_modules/
+admin/dist/
