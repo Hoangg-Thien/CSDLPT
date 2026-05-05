@@ -28,7 +28,8 @@ public class JpaConfig {
 
         Properties props = new Properties();
         props.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        props.setProperty("hibernate.hbm2ddl.auto", "validate");
+        props.setProperty("hibernate.hbm2ddl.auto", "none");
+        props.setProperty("hibernate.temp.use_jdbc_metadata_defaults", "false");
         props.setProperty("hibernate.show_sql", "true");
         em.setJpaProperties(props);
 

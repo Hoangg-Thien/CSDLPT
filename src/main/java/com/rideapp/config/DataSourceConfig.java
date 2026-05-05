@@ -86,6 +86,11 @@ public class DataSourceConfig {
         dataSource.setUsername(username);
         dataSource.setPassword(password);
         dataSource.setDriverClassName("org.postgresql.Driver");
+        // Fail fast: if DB is down, give up quickly instead of blocking threads
+        dataSource.setConnectionTimeout(2000);       // 2 seconds max to get a connection
+        dataSource.setValidationTimeout(1500);       // 1.5 seconds max to validate
+        dataSource.setInitializationFailTimeout(-1); // Don't fail on startup if DB is down
+        dataSource.setMaximumPoolSize(5);            // Keep pool small to avoid exhaustion
         return dataSource;
     }
 }
