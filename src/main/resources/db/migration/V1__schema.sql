@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS rides (
     driver_id  BIGINT       REFERENCES drivers(id),
     pickup     VARCHAR(200) NOT NULL,
     dropoff    VARCHAR(200) NOT NULL,
+    price      VARCHAR(50),
     status     VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
     region     VARCHAR(10)  NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
