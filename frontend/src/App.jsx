@@ -54,20 +54,9 @@ const RealMap = ({ pickup, dropoff, routeCoordinates, showRoute, error, height =
   );
 };
 
-const DevPanel = ({ users, currentUser, db, onToggleDB, onChangeUser }) => {
-  const dbKeys = ["south_primary", "south_replica", "north_primary", "north_replica"];
-  const dbLabels = { south_primary: "S-Pri", south_replica: "S-Rep", north_primary: "N-Pri", north_replica: "N-Rep" };
+const DevPanel = ({ users, currentUser, onChangeUser }) => {
   return (
     <div style={{ background: "#0f172a", padding: "10px 12px", position: "relative", zIndex: 1000 }}>
-      <div style={{ fontSize: 9, color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Control Panel — 4 DB Nodes</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, marginBottom: 8 }}>
-        {dbKeys.map(k => (
-          <div key={k} onClick={() => onToggleDB(k)} style={{ background: db[k] ? "#14532d" : "#7f1d1d", border: `1px solid ${db[k] ? "#166534" : "#991b1b"}`, borderRadius: 6, padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div><div style={{ fontSize: 10, fontWeight: 600, color: db[k] ? "#86efac" : "#fca5a5" }}>{dbLabels[k]}</div><div style={{ fontSize: 9, color: db[k] ? "#4ade80" : "#f87171", opacity: 0.8 }}>{k.includes("primary") ? "Write+Read" : "Read-only"}</div></div>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: db[k] ? "#4ade80" : "#f87171", display: "block" }} />
-          </div>
-        ))}
-      </div>
       <select value={`${currentUser.region}_${currentUser.id}`} onChange={e => {
         const [region, idStr] = e.target.value.split('_');
         onChangeUser(region, parseInt(idStr));
@@ -179,7 +168,7 @@ const SearchScreen = ({ searchFor, pickup, dropoff, region, onSelect, onBack }) 
   );
 };
 
-const HomeScreen = ({ user, db, pickup, dropoff, selRide, distance, onOpenSearch, onSelectRide, onConfirm }) => {
+const HomeScreen = ({ user, db, pickup, dropoff, selRide, distance, onOpenSearch, onSelectRide, onConfirm, onNav }) => {
   const k = user.region.toLowerCase(), canWrite = db[k + "_primary"], canRead = db[k + "_primary"] || db[k + "_replica"], hasRoute = !!dropoff;
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -214,6 +203,7 @@ const HomeScreen = ({ user, db, pickup, dropoff, selRide, distance, onOpenSearch
           </button>
         </div>
       </div>
+      <NavBar active="home" onNav={onNav} />
     </div>
   );
 };
@@ -319,6 +309,49 @@ export default function MobileApp() {
   const [rides, setRides] = useState([]);
 
   useEffect(() => {
+    let mounted = true;
+    const fetchDBStatus = async () => {
+      try {
+        const [southRes, northRes] = await Promise.all([
+          fetch(`${API}/system/status?region=SOUTH`).catch(() => null),
+          fetch(`${API}/system/status?region=NORTH`).catch(() => null)
+        ]);
+
+        const parseStatus = async (res) => {
+          if (!res) return { primary: false, replica: false };
+          if (res.ok) {
+            const data = await res.json();
+            if (data.mode === "PRIMARY") return { primary: true, replica: true };
+            if (data.mode === "READ_ONLY") return { primary: false, replica: true };
+          }
+          return { primary: false, replica: false };
+        };
+
+        const south = await parseStatus(southRes);
+        const north = await parseStatus(northRes);
+
+        if (mounted) {
+          setDb({
+            south_primary: south.primary,
+            south_replica: south.replica,
+            north_primary: north.primary,
+            north_replica: north.replica,
+          });
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    fetchDBStatus();
+    const interval = setInterval(fetchDBStatus, 3000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
     fetch(`${API}/users`).then(r => r.json()).then(data => {
       const mapped = data.map(u => ({ id: u.id, full_name: u.fullName, province: u.province, region: u.region }));
       if (mapped.length) { setUsers(mapped); setCurrentUser(mapped[0]); }
@@ -352,16 +385,18 @@ export default function MobileApp() {
     }
   }, [pickup, dropoff]);
 
-  const loadHistory = useCallback(async (user) => {
-    if (!user) return;
+  const loadHistory = useCallback(async (user, dbStatus) => {
+    if (!user || !dbStatus) return;
+    const k = user.region.toLowerCase();
+    const isReadOnly = !dbStatus[k + "_primary"];
     try {
-      const res = await fetch(`${API}/rides/history/${user.id}?province=${encodeURIComponent(user.province)}&isReadOnly=false`);
+      const res = await fetch(`${API}/rides/history/${user.id}?province=${encodeURIComponent(user.province)}&isReadOnly=${isReadOnly}`);
       const data = await res.json();
-      setRides(data.map(r => ({ ...r, price: r.price || "—", rideIcon: "🚗", source: "primary", date: new Date(r.createdAt).toLocaleString("vi-VN") })).sort((a, b) => b.id - a.id));
+      setRides(data.map(r => ({ ...r, price: r.price || "—", rideIcon: "🚗", source: isReadOnly ? "replica" : "primary", date: new Date(r.createdAt).toLocaleString("vi-VN") })).sort((a, b) => b.id - a.id));
     } catch { setRides([]); }
   }, []);
 
-  useEffect(() => { loadHistory(currentUser); }, [currentUser, loadHistory]);
+  useEffect(() => { loadHistory(currentUser, db); }, [currentUser, db, loadHistory]);
 
   const handleBook = async () => {
     const k = currentUser.region.toLowerCase();
@@ -387,7 +422,7 @@ export default function MobileApp() {
         await fetch(`${API}/rides/complete/${activeRideId}?region=${encodeURIComponent(currentUser.region)}`, { method: "PUT" });
       } catch (e) { console.error("Không thể cập nhật DB:", e); }
     }
-    await loadHistory(currentUser);
+    await loadHistory(currentUser, db);
     setDropoff(null); setActiveDriver(null); setActiveRideId(null); setScreen("activity");
   };
 
@@ -398,9 +433,9 @@ export default function MobileApp() {
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'); *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;} body{background:#cbd5e1;} .phone-frame{width:100%;max-width:400px;margin:16px auto;background:#ffffff;position:relative;box-shadow:0 20px 50px rgba(0,0,0,0.2);border-radius:36px;border:6px solid #1e293b;overflow:hidden;} @media (max-width:480px) { .phone-frame{max-width:100%;margin:0;border:none;border-radius:0;} } button:active{opacity:0.85;transform:scale(0.98);}`}</style>
       <div className="phone-frame">
-        <DevPanel users={users} currentUser={currentUser} db={db} onToggleDB={k => setDb(prev => ({ ...prev, [k]: !prev[k] }))} onChangeUser={(region, id) => { setCurrentUser(users.find(u => u.id === id && u.region === region)); setPickup(null); setDropoff(null); setScreen("home"); }} />
+        <DevPanel users={users} currentUser={currentUser} onChangeUser={(region, id) => { setCurrentUser(users.find(u => u.id === id && u.region === region)); setPickup(null); setDropoff(null); setScreen("home"); }} />
         <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 120px)" }}>
-          {screen === "home" && <HomeScreen user={currentUser} db={db} pickup={pickup} dropoff={dropoff} selRide={selRide} distance={distance} onOpenSearch={t => { setSearchFor(t); setScreen("search"); }} onSelectRide={setSelRide} onConfirm={() => { const r = RIDE_TYPES.find(x => x.id === selRide) || RIDE_TYPES[1]; setFare(r.base + Math.max(1, distance) * r.perKm); setScreen("confirm"); }} />}
+          {screen === "home" && <HomeScreen user={currentUser} db={db} pickup={pickup} dropoff={dropoff} selRide={selRide} distance={distance} onOpenSearch={t => { setSearchFor(t); setScreen("search"); }} onSelectRide={setSelRide} onConfirm={() => { const r = RIDE_TYPES.find(x => x.id === selRide) || RIDE_TYPES[1]; setFare(r.base + Math.max(1, distance) * r.perKm); setScreen("confirm"); }} onNav={setScreen} />}
           {screen === "search" && <SearchScreen searchFor={searchFor} pickup={pickup} dropoff={dropoff} onSelect={p => { searchFor === "pickup" ? setPickup(p) : setDropoff(p); setScreen("home"); }} onBack={() => setScreen("home")} />}
           {screen === "confirm" && <ConfirmScreen user={currentUser} db={db} pickup={pickup} dropoff={dropoff} selRide={selRide} distance={distance} fare={fare} routeCoords={routeCoords} onBook={handleBook} onBack={() => setScreen("home")} />}
           {screen === "driving" && <DrivingScreen user={currentUser} db={db} pickup={pickup} dropoff={dropoff} selRide={selRide} fare={fare} driver={activeDriver} routeCoords={routeCoords} onComplete={handleComplete} onCancel={() => { setActiveDriver(null); setScreen("home"); }} onNav={setScreen} />}

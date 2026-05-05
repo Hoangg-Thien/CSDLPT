@@ -10,22 +10,34 @@ import javax.sql.DataSource;
 @Configuration
 public class FlywayConfig {
 
-    @Bean(name = "flywaySouth", initMethod = "migrate")
+    @Bean(name = "flywaySouth")
     public Flyway flywaySouth(
             @Qualifier("southPrimaryDS") DataSource dataSource,
             @Value("${spring.flyway.locations:classpath:db/migration}") String[] locations,
             @Value("${spring.flyway.baseline-on-migrate:false}") boolean baselineOnMigrate,
             @Value("${spring.flyway.baseline-version:1}") String baselineVersion) {
-        return buildFlyway(dataSource, locations, baselineOnMigrate, baselineVersion);
+        Flyway flyway = buildFlyway(dataSource, locations, baselineOnMigrate, baselineVersion);
+        try {
+            flyway.migrate();
+        } catch (Exception e) {
+            System.err.println("Warning: Could not migrate South Primary DB. Starting anyway... " + e.getMessage());
+        }
+        return flyway;
     }
 
-    @Bean(name = "flywayNorth", initMethod = "migrate")
+    @Bean(name = "flywayNorth")
     public Flyway flywayNorth(
             @Qualifier("northPrimaryDS") DataSource dataSource,
             @Value("${spring.flyway.locations:classpath:db/migration}") String[] locations,
             @Value("${spring.flyway.baseline-on-migrate:false}") boolean baselineOnMigrate,
             @Value("${spring.flyway.baseline-version:1}") String baselineVersion) {
-        return buildFlyway(dataSource, locations, baselineOnMigrate, baselineVersion);
+        Flyway flyway = buildFlyway(dataSource, locations, baselineOnMigrate, baselineVersion);
+        try {
+            flyway.migrate();
+        } catch (Exception e) {
+            System.err.println("Warning: Could not migrate North Primary DB. Starting anyway... " + e.getMessage());
+        }
+        return flyway;
     }
 
     private Flyway buildFlyway(
