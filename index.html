@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="vi" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Be Vietnam Pro', sans-serif; }
+    .slide { display: none; }
+    .slide.active { display: flex; }
+    .progress-bar { transition: width 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeIn 0.5s ease forwards; }
+    .animate-in:nth-child(1) { animation-delay: 0.1s; }
+    .animate-in:nth-child(2) { animation-delay: 0.2s; }
+    .animate-in:nth-child(3) { animation-delay: 0.3s; }
+    .animate-in:nth-child(4) { animation-delay: 0.4s; }
+    .animate-in:nth-child(5) { animation-delay: 0.5s; }
+    .animate-in:nth-child(6) { animation-delay: 0.6s; }
+    .node-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-slate-900 text-white overflow-hidden">
+  <div id="app" class="h-full w-full flex flex-col"><!-- Progress bar -->
+   <div class="w-full h-1 bg-slate-800">
+    <div id="progress" class="progress-bar h-full bg-gradient-to-r from-emerald-400 to-cyan-400"></div>
+   </div><!-- Slides container -->
+   <div id="slides-container" class="flex-1 relative overflow-hidden"><!-- Slide 1: Title -->
+    <div class="slide active flex-col items-center justify-center h-full px-8 text-center" data-slide="1">
+     <div class="max-w-4xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-6 animate-in opacity-0"><i data-lucide="database" style="width:16px;height:16px;" class="text-emerald-400"></i> <span class="text-emerald-400 text-sm font-medium">Cơ Sở Dữ Liệu Phân Tán</span>
+      </div>
+      <h1 class="text-4xl md:text-6xl font-800 mb-4 animate-in opacity-0 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Ứng Dụng Gọi Xe<br>
+       Theo Vị Trí</h1>
+      <p class="text-xl text-slate-400 mb-2 animate-in opacity-0">Cơ Chế Định Tuyến, Nhân Bản, Failover và Read-only</p>
+      <div class="mt-8 animate-in opacity-0 space-y-1 text-slate-500">
+       <p>Lớp: <span class="text-slate-300">DCT123C3</span></p>
+       <p>GVHD: <span class="text-slate-300">Vũ Ngọc Thanh Sang</span></p>
+      </div>
+     </div>
+    </div><!-- Slide 2: Bài Toán -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="2">
+     <div class="max-w-4xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">01.</span> Bài Toán</h2>
+      <div class="space-y-4">
+       <div class="animate-in opacity-0 flex items-start gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50"><i data-lucide="clock" style="width:24px;height:24px;" class="text-amber-400 mt-0.5 shrink-0"></i>
+        <p class="text-lg text-slate-300">Ứng dụng gọi xe là hệ thống <span class="text-white font-600">thời gian thực</span>, cần độ trễ thấp</p>
+       </div>
+       <div class="animate-in opacity-0 flex items-start gap-4 p-4 rounded-xl bg-red-500/5 border border-red-500/20"><i data-lucide="alert-triangle" style="width:24px;height:24px;" class="text-red-400 mt-0.5 shrink-0"></i>
+        <p class="text-lg text-slate-300">User TP.HCM kết nối server Hà Nội → <span class="text-red-400 font-600">trễ cao</span></p>
+       </div>
+       <div class="animate-in opacity-0 flex items-start gap-4 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20"><i data-lucide="check-circle" style="width:24px;height:24px;" class="text-emerald-400 mt-0.5 shrink-0"></i>
+        <p class="text-lg text-slate-300">Giải pháp: <span class="text-emerald-400 font-600">chia hệ thống theo vị trí địa lý</span></p>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 3: Mục Tiêu -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="3">
+     <div class="max-w-4xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">02.</span> Mục Tiêu Đề Tài</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div class="animate-in opacity-0 p-5 rounded-xl bg-slate-800/50 border border-slate-700/50"><i data-lucide="map-pin" style="width:28px;height:28px;" class="text-cyan-400 mb-3"></i>
+        <h3 class="font-600 mb-1">Định tuyến</h3>
+        <p class="text-sm text-slate-400">Theo vị trí người dùng</p>
+       </div>
+       <div class="animate-in opacity-0 p-5 rounded-xl bg-slate-800/50 border border-slate-700/50"><i data-lucide="copy" style="width:28px;height:28px;" class="text-purple-400 mb-3"></i>
+        <h3 class="font-600 mb-1">Nhân bản</h3>
+        <p class="text-sm text-slate-400">Server chính &amp; dự phòng theo vùng</p>
+       </div>
+       <div class="animate-in opacity-0 p-5 rounded-xl bg-slate-800/50 border border-slate-700/50"><i data-lucide="shield" style="width:28px;height:28px;" class="text-amber-400 mb-3"></i>
+        <h3 class="font-600 mb-1">Failover</h3>
+        <p class="text-sm text-slate-400">Primary sập → chuyển Replica</p>
+       </div>
+       <div class="animate-in opacity-0 p-5 rounded-xl bg-slate-800/50 border border-slate-700/50"><i data-lucide="eye" style="width:28px;height:28px;" class="text-emerald-400 mb-3"></i>
+        <h3 class="font-600 mb-1">Read-only</h3>
+        <p class="text-sm text-slate-400">Xem lịch sử, không đặt chuyến mới</p>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 4: Kiến Trúc -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="4">
+     <div class="max-w-5xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">03.</span> Kiến Trúc Hệ Thống</h2>
+      <div class="animate-in opacity-0">
+       <div class="flex flex-col items-center gap-4"><!-- Frontend -->
+        <div class="px-6 py-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-500"><i data-lucide="monitor" style="width:16px;height:16px;display:inline;vertical-align:middle;" class="mr-2"></i>Frontend - Web App
+        </div>
+        <div class="w-px h-6 bg-slate-600"></div><!-- Backend -->
+        <div class="px-6 py-3 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300 font-500"><i data-lucide="server" style="width:16px;height:16px;display:inline;vertical-align:middle;" class="mr-2"></i>Spring Boot Backend
+        </div>
+        <div class="flex items-center gap-4">
+         <div class="w-20 h-px bg-slate-600"></div>
+         <div class="w-20 h-px bg-slate-600"></div>
+        </div><!-- Databases -->
+        <div class="flex gap-6 flex-wrap justify-center">
+         <div class="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 text-center min-w-[180px]">
+          <p class="text-blue-400 font-600 mb-2">🏔️ Miền Bắc</p>
+          <div class="space-y-1 text-sm">
+           <div class="px-3 py-1 rounded bg-green-500/10 text-green-400">
+            Primary (ghi/đọc)
+           </div>
+           <div class="px-3 py-1 rounded bg-slate-700 text-slate-300">
+            Replica (đọc)
+           </div>
+          </div>
+         </div>
+         <div class="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20 text-center min-w-[180px]">
+          <p class="text-orange-400 font-600 mb-2">🌴 Miền Nam</p>
+          <div class="space-y-1 text-sm">
+           <div class="px-3 py-1 rounded bg-green-500/10 text-green-400">
+            Primary (ghi/đọc)
+           </div>
+           <div class="px-3 py-1 rounded bg-slate-700 text-slate-300">
+            Replica (đọc)
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 5: Định Tuyến -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="5">
+     <div class="max-w-4xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">04.</span> Định Tuyến Theo Vị Trí</h2>
+      <div class="animate-in opacity-0 flex flex-col md:flex-row items-center gap-8">
+       <div class="flex-1 space-y-4">
+        <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50"><span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-600">1</span>
+         <p class="text-slate-300">User chọn vị trí đặt xe</p>
+        </div>
+        <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50"><span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-600">2</span>
+         <p class="text-slate-300">Xác định: User thuộc Bắc hoặc Nam?</p>
+        </div>
+        <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50"><span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-600">3</span>
+         <p class="text-slate-300">Route → server khu vực</p>
+        </div>
+       </div>
+       <div class="text-6xl">
+        🗺️
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 6: Nhân Bản -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="6">
+     <div class="max-w-4xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">05.</span> Nhân Bản Dữ Liệu</h2>
+      <div class="space-y-4">
+       <div class="animate-in opacity-0 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+         <i data-lucide="edit" style="width:20px;height:20px;" class="text-green-400"></i>
+        </div>
+        <div>
+         <p class="font-500">Primary</p>
+         <p class="text-sm text-slate-400">Chịu trách nhiệm ghi dữ liệu</p>
+        </div>
+       </div>
+       <div class="animate-in opacity-0 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+         <i data-lucide="copy" style="width:20px;height:20px;" class="text-blue-400"></i>
+        </div>
+        <div>
+         <p class="font-500">Replica</p>
+         <p class="text-sm text-slate-400">Đồng bộ dữ liệu từ Primary, phục vụ đọc</p>
+        </div>
+       </div>
+       <div class="animate-in opacity-0 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+         <i data-lucide="shield" style="width:20px;height:20px;" class="text-amber-400"></i>
+        </div>
+        <div>
+         <p class="font-500">Khi Primary sập</p>
+         <p class="text-sm text-slate-400">Replica vẫn giữ dữ liệu → duy trì truy cập</p>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 7: Failover -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="7">
+     <div class="max-w-4xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">06.</span> Cơ Chế Failover</h2>
+      <div class="animate-in opacity-0">
+       <div class="flex items-center justify-center gap-4 flex-wrap">
+        <div class="px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-center">
+         <p class="text-red-400 font-600">Primary</p>
+         <p class="text-xs text-red-400/60 mt-1">❌ DOWN</p>
+        </div><i data-lucide="arrow-right" style="width:24px;height:24px;" class="text-slate-500"></i>
+        <div class="px-5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center node-pulse">
+         <p class="text-emerald-400 font-600">Replica</p>
+         <p class="text-xs text-emerald-400/60 mt-1">✓ ACTIVE</p>
+        </div><i data-lucide="arrow-right" style="width:24px;height:24px;" class="text-slate-500"></i>
+        <div class="px-5 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+         <p class="text-amber-400 font-600">Read-only</p>
+         <p class="text-xs text-amber-400/60 mt-1">🔒 MODE</p>
+        </div>
+       </div>
+       <div class="mt-8 space-y-3">
+        <p class="text-slate-300 flex items-center gap-2"><i data-lucide="check" style="width:16px;height:16px;" class="text-emerald-400"></i> Người dùng vẫn xem được dữ liệu cũ</p>
+        <p class="text-slate-300 flex items-center gap-2"><i data-lucide="x" style="width:16px;height:16px;" class="text-red-400"></i> Các thao tác ghi mới bị chặn</p>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 8: Read-only -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="8">
+     <div class="max-w-4xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">07.</span> Chế Độ Read-only</h2>
+      <div class="animate-in opacity-0 grid grid-cols-1 md:grid-cols-2 gap-6">
+       <div class="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+        <div class="text-4xl mb-3">
+         ✓
+        </div>
+        <h3 class="font-600 text-emerald-400 mb-2">Được phép</h3>
+        <p class="text-slate-300">Xem lịch sử chuyến đi</p>
+       </div>
+       <div class="p-6 rounded-xl bg-red-500/5 border border-red-500/20">
+        <div class="text-4xl mb-3">
+         ✗
+        </div>
+        <h3 class="font-600 text-red-400 mb-2">Không được</h3>
+        <p class="text-slate-300">Đặt chuyến mới</p>
+       </div>
+      </div>
+      <div class="animate-in opacity-0 mt-6 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20 text-center">
+       <p class="text-amber-400 text-sm">⚠️ Hiển thị cảnh báo: "Chỉ đọc từ Replica"</p>
+      </div>
+     </div>
+    </div><!-- Slide 9: Demo -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="9">
+     <div class="max-w-5xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">08.</span> Demo Minh Họa</h2>
+      <div class="animate-in opacity-0 grid grid-cols-1 md:grid-cols-2 gap-6">
+       <div class="p-5 rounded-xl bg-orange-500/5 border border-orange-500/20">
+        <h3 class="font-600 text-orange-400 mb-4">🌴 Trường Hợp: Miền Nam</h3>
+        <ol class="space-y-2 text-sm text-slate-300">
+         <li>1. Chọn user miền Nam</li>
+         <li>2. Đặt 1 chuyến đi</li>
+         <li>3. Tắt Primary miền Nam</li>
+         <li class="text-emerald-400">✓ Vẫn xem được lịch sử</li>
+         <li class="text-red-400">✗ Không đặt chuyến mới</li>
+        </ol>
+       </div>
+       <div class="p-5 rounded-xl bg-blue-500/5 border border-blue-500/20">
+        <h3 class="font-600 text-blue-400 mb-4">🏔️ Trường Hợp: Miền Bắc</h3>
+        <ol class="space-y-2 text-sm text-slate-300">
+         <li>1. Chọn user miền Bắc</li>
+         <li>2. Đặt 1 chuyến đi</li>
+         <li>3. Tắt Primary miền Bắc</li>
+         <li class="text-emerald-400">✓ Vẫn xem được lịch sử</li>
+         <li class="text-red-400">✗ Không đặt chuyến mới</li>
+        </ol>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 10: Test Plan -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="10">
+     <div class="max-w-6xl mx-auto w-full">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4 animate-in opacity-0">
+       <div>
+        <h2 class="text-3xl font-700"><span class="text-emerald-400">09.</span> Kế hoạch kiểm thử hệ thống</h2>
+        <p class="text-sm text-slate-400 mt-1">Hệ thống phân tán đặt xe với cơ chế Failover</p>
+       </div>
+       <div class="flex flex-wrap gap-2 text-xs">
+        <span class="px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">Tổng: <span id="tc-total" class="text-white font-600">—</span></span>
+        <span class="px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">Nhóm: <span id="tc-groups" class="text-white font-600">—</span></span>
+        <span class="px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">Cần lưu ý: <span id="tc-warn" class="text-amber-300 font-600">—</span></span>
+       </div>
+      </div>
+
+      <div class="animate-in opacity-0 rounded-xl bg-slate-800/40 border border-slate-700/50 overflow-hidden">
+       <div class="max-h-[70vh] overflow-auto">
+          <div class="p-4 space-y-5" id="testplan">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+           <div class="p-4 rounded-lg bg-slate-900/30 border border-slate-700/50 text-center">
+            <div class="text-2xl font-700 text-emerald-300" id="tc-total-card">—</div>
+            <div class="text-xs text-slate-500 uppercase tracking-wide">Tổng Test Case</div>
+           </div>
+           <div class="p-4 rounded-lg bg-slate-900/30 border border-slate-700/50 text-center">
+            <div class="text-2xl font-700 text-cyan-300">Routing</div>
+            <div class="text-xs text-slate-500">Province / GPS</div>
+           </div>
+           <div class="p-4 rounded-lg bg-slate-900/30 border border-slate-700/50 text-center">
+            <div class="text-2xl font-700 text-rose-300">Failover</div>
+            <div class="text-xs text-slate-500">Read-only / Recovery</div>
+           </div>
+           <div class="p-4 rounded-lg bg-slate-900/30 border border-slate-700/50 text-center">
+            <div class="text-2xl font-700 text-amber-300" id="tc-warn-card">—</div>
+            <div class="text-xs text-slate-500 uppercase tracking-wide">Cần Lưu Ý</div>
+           </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+           <span class="font-600 text-slate-300">Chú giải:</span>
+           <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/30 border border-slate-700/50">
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">200</span> OK
+           </span>
+           <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/30 border border-slate-700/50">
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">400</span> Bad Request
+           </span>
+           <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/30 border border-slate-700/50">
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-red-500/30 bg-red-500/10 text-red-300">503</span> Read-only mode
+           </span>
+           <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/5 border border-amber-500/20 text-amber-300">CHÚ Ý</span>
+          </div>
+
+          <!-- Routing -->
+         <div class="tc-section rounded-lg bg-slate-900/20 border border-slate-700/50 overflow-hidden">
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-700/50">
+           <div class="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">🗺️</div>
+           <div class="flex-1">
+            <div class="font-600">Kiểm thử chức năng định tuyến (Routing)</div>
+            <div class="text-xs text-slate-500">Đảm bảo xác định đúng vùng miền NORTH/SOUTH</div>
+           </div>
+            <span class="text-xs px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">5 TC</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+            <thead class="bg-slate-800/50 text-slate-400 text-xs">
+             <tr>
+              <th class="px-4 py-2 text-left">Mã TC</th>
+              <th class="px-4 py-2 text-left">Chức năng</th>
+              <th class="px-4 py-2 text-left">Mục tiêu kiểm thử</th>
+              <th class="px-4 py-2 text-left">Kết quả mong đợi</th>
+              <th class="px-4 py-2 text-left">Code</th>
+             </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/70">
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ROUTE-01</span></td>
+              <td class="px-4 py-2 text-slate-200">Định tuyến theo tỉnh thành</td>
+              <td class="px-4 py-2 text-slate-400">Chọn đúng database miền Bắc (Hà Nội, Hải Phòng) hoặc miền Nam (Hồ Chí Minh, Cần Thơ).</td>
+              <td class="px-4 py-2 text-slate-400">Xác định region=NORTH hoặc region=SOUTH, người dùng kết nối đúng DB vùng.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">200</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ROUTE-02</span></td>
+              <td class="px-4 py-2 text-slate-200">Xử lý lỗi</td>
+              <td class="px-4 py-2 text-slate-400">Từ chối yêu cầu khi tỉnh không hợp lệ hoặc không hỗ trợ.</td>
+              <td class="px-4 py-2 text-slate-400">Trả lỗi rõ ràng, thông báo tỉnh chưa được hỗ trợ.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">400</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ROUTE-03</span></td>
+              <td class="px-4 py-2 text-slate-200">Định tuyến theo GPS</td>
+              <td class="px-4 py-2 text-slate-400">Xác định vùng miền theo tọa độ GPS hợp lệ.</td>
+              <td class="px-4 py-2 text-slate-400">Trả region đúng theo vị trí địa lý của tọa độ.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">200</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ROUTE-04</span></td>
+              <td class="px-4 py-2 text-slate-200">Xử lý lỗi</td>
+              <td class="px-4 py-2 text-slate-400">GPS thiếu thông tin (chỉ latitude hoặc longitude).</td>
+              <td class="px-4 py-2 text-slate-400">Yêu cầu cung cấp đủ latitude + longitude.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">400</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ROUTE-05</span></td>
+              <td class="px-4 py-2 text-slate-200">Xử lý xung đột</td>
+              <td class="px-4 py-2 text-slate-400">Region và province mâu thuẫn (region=NORTH nhưng province=Ho Chi Minh).</td>
+              <td class="px-4 py-2 text-slate-400">Không cho phép xử lý tiếp, báo mâu thuẫn dữ liệu.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">400</span></td>
+             </tr>
+            </tbody>
+            </table>
+          </div>
+         </div>
+
+         <!-- Failover -->
+         <div class="tc-section rounded-lg bg-slate-900/20 border border-slate-700/50 overflow-hidden">
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-700/50">
+           <div class="w-9 h-9 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center">⚡</div>
+           <div class="flex-1">
+            <div class="font-600">Kiểm thử cơ chế dự phòng (Failover)</div>
+            <div class="text-xs text-slate-500">Chuyển read-only và phục hồi ghi</div>
+           </div>
+           <span class="text-xs px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">4 TC</span>
+          </div>
+          <div class="overflow-x-auto">
+           <table class="min-w-full text-sm">
+            <thead class="bg-slate-800/50 text-slate-400 text-xs">
+             <tr>
+              <th class="px-4 py-2 text-left">Mã TC</th>
+              <th class="px-4 py-2 text-left">Chức năng</th>
+              <th class="px-4 py-2 text-left">Mục tiêu kiểm thử</th>
+              <th class="px-4 py-2 text-left">Kết quả mong đợi</th>
+              <th class="px-4 py-2 text-left">Code</th>
+             </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/70">
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">FAIL-01</span></td>
+              <td class="px-4 py-2 text-slate-200">Chuyển sang chế độ đọc</td>
+              <td class="px-4 py-2 text-slate-400">Primary ngưng hoạt động, đọc dữ liệu từ Replica.</td>
+              <td class="px-4 py-2 text-slate-400">Vẫn truy vấn được dữ liệu ở READ-ONLY.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">200</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">FAIL-02</span></td>
+              <td class="px-4 py-2 text-slate-200">Chặn thao tác ghi</td>
+              <td class="px-4 py-2 text-slate-400">Primary ngưng hoạt động, thao tác ghi bị chặn.</td>
+              <td class="px-4 py-2 text-slate-400">Trả mode: READ_ONLY khi cố ghi.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-red-500/30 bg-red-500/10 text-red-300">503</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">FAIL-03</span></td>
+              <td class="px-4 py-2 text-slate-200">Phục hồi chức năng</td>
+              <td class="px-4 py-2 text-slate-400">Primary hoạt động trở lại, cho phép ghi dữ liệu.</td>
+              <td class="px-4 py-2 text-slate-400">Tạo ride thành công, hệ thống về PRIMARY.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">200</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">FAIL-04</span></td>
+              <td class="px-4 py-2 text-slate-200">Xử lý sự cố nghiêm trọng</td>
+              <td class="px-4 py-2 text-slate-400">Cả Primary và Replica đều ngưng hoạt động.</td>
+              <td class="px-4 py-2 text-slate-400">Không đọc/ghi được, thông báo dịch vụ gặp sự cố.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-red-500/30 bg-red-500/10 text-red-300">503</span></td>
+             </tr>
+            </tbody>
+           </table>
+          </div>
+         </div>
+
+         <!-- System Status -->
+         <div class="tc-section rounded-lg bg-slate-900/20 border border-slate-700/50 overflow-hidden">
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-700/50">
+           <div class="w-9 h-9 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center">📡</div>
+           <div class="flex-1">
+            <div class="font-600">Kiểm thử API trạng thái hệ thống</div>
+            <div class="text-xs text-slate-500">/api/system/status cung cấp mode + active node</div>
+           </div>
+           <span class="text-xs px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">2 TC</span>
+          </div>
+          <div class="overflow-x-auto">
+           <table class="min-w-full text-sm">
+            <thead class="bg-slate-800/50 text-slate-400 text-xs">
+             <tr>
+              <th class="px-4 py-2 text-left">Mã TC</th>
+              <th class="px-4 py-2 text-left">Chức năng</th>
+              <th class="px-4 py-2 text-left">Mục tiêu kiểm thử</th>
+              <th class="px-4 py-2 text-left">Kết quả mong đợi</th>
+              <th class="px-4 py-2 text-left">Code</th>
+             </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/70">
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">SYS-01</span></td>
+              <td class="px-4 py-2 text-slate-200">Trạng thái bình thường</td>
+              <td class="px-4 py-2 text-slate-400">Primary đang chạy, hệ thống hoạt động ổn định.</td>
+              <td class="px-4 py-2 text-slate-400">mode=PRIMARY, activeNode=PRIMARY.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">200</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">SYS-02</span></td>
+              <td class="px-4 py-2 text-slate-200">Trạng thái dự phòng</td>
+              <td class="px-4 py-2 text-slate-400">Primary gặp sự cố, hệ thống chạy trên Replica.</td>
+              <td class="px-4 py-2 text-slate-400">mode=READ_ONLY, activeNode=REPLICA.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-emerald-500/30 bg-emerald-500/10 text-emerald-300">200</span></td>
+             </tr>
+            </tbody>
+           </table>
+          </div>
+         </div>
+
+         <!-- Admin UI -->
+         <div class="tc-section rounded-lg bg-slate-900/20 border border-slate-700/50 overflow-hidden">
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-700/50">
+           <div class="w-9 h-9 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center">🖥️</div>
+           <div class="flex-1">
+            <div class="font-600">Kiểm thử giao diện quản trị (Admin Dashboard)</div>
+            <div class="text-xs text-slate-500">Dashboard, Trips, Drivers, Users</div>
+           </div>
+           <span class="text-xs px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">4 TC</span>
+          </div>
+          <div class="overflow-x-auto">
+           <table class="min-w-full text-sm">
+            <thead class="bg-slate-800/50 text-slate-400 text-xs">
+             <tr>
+              <th class="px-4 py-2 text-left">Mã TC</th>
+              <th class="px-4 py-2 text-left">Chức năng</th>
+              <th class="px-4 py-2 text-left">Mục tiêu kiểm thử</th>
+              <th class="px-4 py-2 text-left">Kết quả mong đợi</th>
+              <th class="px-4 py-2 text-left">Loại</th>
+             </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/70">
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ADMIN-01</span></td>
+              <td class="px-4 py-2 text-slate-200">Trang tổng quan</td>
+              <td class="px-4 py-2 text-slate-400">Hiển thị đúng số liệu thống kê tổng quan.</td>
+              <td class="px-4 py-2 text-slate-400">Số Users/Drivers/Trips khớp dữ liệu API.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">UI</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ADMIN-02</span></td>
+              <td class="px-4 py-2 text-slate-200">Quản lý chuyến đi</td>
+              <td class="px-4 py-2 text-slate-400">Phân nhóm chuyến theo vùng và status đúng.</td>
+              <td class="px-4 py-2 text-slate-400">Danh sách SOUTH/NORTH rõ ràng, status hiển thị đúng.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">UI</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ADMIN-03</span></td>
+              <td class="px-4 py-2 text-slate-200">Quản lý tài xế</td>
+              <td class="px-4 py-2 text-slate-400">Phân nhóm theo vùng, trạng thái sẵn sàng/bận.</td>
+              <td class="px-4 py-2 text-slate-400">isAvailable hiển thị Available/Busy chính xác.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">UI</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">ADMIN-04</span></td>
+              <td class="px-4 py-2 text-slate-200">Quản lý người dùng</td>
+              <td class="px-4 py-2 text-slate-400">Phân nhóm người dùng theo vùng miền.</td>
+              <td class="px-4 py-2 text-slate-400">Users chia SOUTH/NORTH rõ ràng.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">UI</span></td>
+             </tr>
+            </tbody>
+           </table>
+          </div>
+         </div>
+
+         <!-- Mobile UI -->
+         <div class="tc-section rounded-lg bg-slate-900/20 border border-slate-700/50 overflow-hidden">
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-700/50">
+           <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">📱</div>
+           <div class="flex-1">
+            <div class="font-600">Kiểm thử ứng dụng di động (Mobile App)</div>
+            <div class="text-xs text-slate-500">Select user, DB status, book ride, history</div>
+           </div>
+           <span class="text-xs px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-slate-300">5 TC</span>
+          </div>
+          <div class="overflow-x-auto">
+           <table class="min-w-full text-sm">
+            <thead class="bg-slate-800/50 text-slate-400 text-xs">
+             <tr>
+              <th class="px-4 py-2 text-left">Mã TC</th>
+              <th class="px-4 py-2 text-left">Chức năng</th>
+              <th class="px-4 py-2 text-left">Mục tiêu kiểm thử</th>
+              <th class="px-4 py-2 text-left">Kết quả mong đợi</th>
+              <th class="px-4 py-2 text-left">Loại</th>
+             </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/70">
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">APP-01</span></td>
+              <td class="px-4 py-2 text-slate-200">Chọn người dùng</td>
+              <td class="px-4 py-2 text-slate-400">Load danh sách users, cho phép chọn user.</td>
+              <td class="px-4 py-2 text-slate-400">Current user và region hiển thị chính xác.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">UI</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">APP-02</span></td>
+              <td class="px-4 py-2 text-slate-200">Hiển thị trạng thái DB</td>
+              <td class="px-4 py-2 text-slate-400">Badge status theo /system/status.</td>
+              <td class="px-4 py-2 text-slate-400">PRIMARY (xanh), REPLICA (vàng), Offline (đỏ).</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">UI</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">APP-03</span></td>
+              <td class="px-4 py-2 text-slate-200">Đặt xe bình thường</td>
+              <td class="px-4 py-2 text-slate-400">Primary hoạt động bình thường.</td>
+              <td class="px-4 py-2 text-slate-400">Chuyển sang màn hình driving, tạo ride thành công.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">UI</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">APP-04</span></td>
+              <td class="px-4 py-2 text-slate-200">Chặn đặt xe khi sự cố</td>
+              <td class="px-4 py-2 text-slate-400">Primary gặp sự cố.</td>
+              <td class="px-4 py-2 text-slate-400">Nút đặt xe disable, không tạo ride mới.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">UI</span></td>
+             </tr>
+             <tr class="tc-row hover:bg-slate-800/20">
+              <td class="px-4 py-2"><span class="font-mono text-xs font-700 text-emerald-300">APP-05</span></td>
+              <td class="px-4 py-2 text-slate-200">Xem lịch sử</td>
+              <td class="px-4 py-2 text-slate-400">Hệ thống ở chế độ chỉ đọc.</td>
+              <td class="px-4 py-2 text-slate-400">Hiện rõ đang đọc từ Replica, list vẫn đầy đủ.</td>
+              <td class="px-4 py-2"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-600 border-amber-500/30 bg-amber-500/10 text-amber-300">UI</span></td>
+             </tr>
+            </tbody>
+           </table>
+          </div>
+         </div>
+
+         <div class="rounded-lg bg-slate-900/30 border border-slate-700/50 p-4">
+          <div class="text-sm font-600 text-slate-200 mb-2">Ghi chú</div>
+          <ul class="text-xs text-slate-400 space-y-1">
+           <li>• Mỗi test case kiểm tra một khía cạnh cụ thể của hệ thống.</li>
+           <li>• Kết quả mong đợi mô tả chi tiết để so sánh với thực tế.</li>
+           <li>• Bao quát cả trường hợp thành công và xử lý lỗi.</li>
+           <li>• Nên kiểm thử theo thứ tự từng nhóm chức năng để dễ kiểm soát.</li>
+          </ul>
+         </div>
+
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 11: Kết Quả -->
+    <div class="slide flex-col items-center justify-center h-full px-8" data-slide="11">
+     <div class="max-w-4xl mx-auto w-full">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">10.</span> Kết Quả Đạt Được</h2>
+      <div class="space-y-3">
+       <div class="animate-in opacity-0 flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20"><i data-lucide="check-circle" style="width:20px;height:20px;" class="text-emerald-400 shrink-0"></i>
+        <p class="text-slate-300">Định tuyến theo vị trí → <span class="text-white font-500">giảm độ trễ</span></p>
+       </div>
+       <div class="animate-in opacity-0 flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20"><i data-lucide="check-circle" style="width:20px;height:20px;" class="text-emerald-400 shrink-0"></i>
+        <p class="text-slate-300">Nhân bản dữ liệu → <span class="text-white font-500">tăng an toàn</span></p>
+       </div>
+       <div class="animate-in opacity-0 flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20"><i data-lucide="check-circle" style="width:20px;height:20px;" class="text-emerald-400 shrink-0"></i>
+        <p class="text-slate-300">Failover → <span class="text-white font-500">không ngắt hoàn toàn</span></p>
+       </div>
+       <div class="animate-in opacity-0 flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20"><i data-lucide="check-circle" style="width:20px;height:20px;" class="text-emerald-400 shrink-0"></i>
+        <p class="text-slate-300">Read-only → <span class="text-white font-500">vẫn xem được dữ liệu cũ</span></p>
+       </div>
+       <div class="animate-in opacity-0 flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20"><i data-lucide="check-circle" style="width:20px;height:20px;" class="text-emerald-400 shrink-0"></i>
+        <p class="text-slate-300">Test case chứng minh <span class="text-white font-500">đúng yêu cầu</span></p>
+       </div>
+      </div>
+     </div>
+    </div><!-- Slide 12: Kết Luận -->
+    <div class="slide flex-col items-center justify-center h-full px-8 text-center" data-slide="12">
+     <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-700 mb-8 animate-in opacity-0"><span class="text-emerald-400">11.</span> Kết Luận</h2>
+      <div class="animate-in opacity-0 space-y-4 text-lg text-slate-300 mb-10">
+       <p>✓ Mô phỏng hệ thống gọi xe theo vùng địa lý</p>
+       <p>✓ Đáp ứng: định tuyến, replication, failover, read-only</p>
+       <p>✓ Test case toàn diện chứng minh tính đúng đắn</p>
+      </div>
+      <div class="animate-in opacity-0 mt-8 p-6 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
+       <p class="text-2xl font-600 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Cảm ơn thầy/cô và các bạn đã lắng nghe! 🙏</p>
+      </div>
+     </div>
+    </div>
+   </div><!-- Navigation -->
+   <div class="flex items-center justify-between px-6 py-4 bg-slate-800/50 border-t border-slate-700/30"><button id="prevBtn" onclick="changeSlide(-1)" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition text-sm disabled:opacity-30 disabled:cursor-not-allowed"> <i data-lucide="chevron-left" style="width:16px;height:16px;"></i> Trước </button> <span id="slideCounter" class="text-sm text-slate-400"></span> <button id="nextBtn" onclick="changeSlide(1)" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-sm disabled:opacity-30 disabled:cursor-not-allowed"> Sau <i data-lucide="chevron-right" style="width:16px;height:16px;"></i> </button>
+   </div>
+  </div>
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 12;
+
+    const defaultConfig = {
+      presenter_name: '',
+      font_family: 'Be Vietnam Pro',
+      font_size: 16,
+      background_color: '#0f172a',
+      text_color: '#ffffff',
+      accent_color: '#34d399',
+      surface_color: '#1e293b',
+      secondary_action_color: '#94a3b8'
+    };
+
+    function changeSlide(dir) {
+      const next = currentSlide + dir;
+      if (next < 1 || next > totalSlides) return;
+      currentSlide = next;
+      renderSlides();
+    }
+
+    function renderSlides() {
+      document.querySelectorAll('.slide').forEach((s, i) => {
+        s.classList.toggle('active', i + 1 === currentSlide);
+      });
+      document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('progress').style.width = `${(currentSlide / totalSlides) * 100}%`;
+      document.getElementById('prevBtn').disabled = currentSlide === 1;
+      document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+      // Re-trigger animations
+      const active = document.querySelector('.slide.active');
+      active.querySelectorAll('.animate-in').forEach(el => {
+        el.style.opacity = '0';
+        void el.offsetWidth;
+        el.style.opacity = '';
+      });
+    }
+
+    // Keyboard nav
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+      if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    function updateTestPlanStats() {
+      const plan = document.getElementById('testplan');
+      if (!plan) return;
+
+      const total = plan.querySelectorAll('.tc-row').length;
+      const groups = plan.querySelectorAll('.tc-section').length;
+      const warn = plan.querySelectorAll('.tc-warn').length;
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = String(value);
+      };
+
+      setText('tc-total', total);
+      setText('tc-groups', groups);
+      setText('tc-warn', warn);
+      setText('tc-total-card', total);
+      setText('tc-warn-card', warn);
+    }
+
+    renderSlides();
+    updateTestPlanStats();
+    lucide.createIcons();
+
+    // Element SDK
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: async (config) => {
+        const font = config.font_family || defaultConfig.font_family;
+        document.body.style.fontFamily = `${font}, sans-serif`;
+        document.body.style.backgroundColor = config.background_color || defaultConfig.background_color;
+        document.body.style.color = config.text_color || defaultConfig.text_color;
+        const baseSize = config.font_size || defaultConfig.font_size;
+        document.body.style.fontSize = `${baseSize}px`;
+      },
+      mapToCapabilities: (config) => ({
+        recolorables: [
+          { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+          { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+          { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+          { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
+          { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } }
+        ],
+        borderables: [],
+        fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+        fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } }
+      }),
+      mapToEditPanelValues: (config) => new Map([
+        ["presenter_name", config.presenter_name || defaultConfig.presenter_name]
+      ])
+    });
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f710130c16e821d',t:'MTc3Nzk5NzMxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
