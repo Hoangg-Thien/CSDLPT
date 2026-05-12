@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benchmark Latency – Distributed vs Single DB</title>
+  <meta name="description" content="Đo độ trễ thực tế giữa cơ sở dữ liệu phân tán và cơ sở dữ liệu tập trung trong hệ thống ride-hailing" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --accent:    #7c3aed;
+      --accent2:   #06b6d4;
+      --green:     #22c55e;
+      --amber:     #f59e0b;
+      --red:       #ef4444;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --glow:      0 0 40px rgba(124,58,237,.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .hero {
+      background: linear-gradient(135deg, #1a0533 0%, #0a1628 50%, #001a2c 100%);
+      padding: 48px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% -20%, rgba(124,58,237,.35) 0%, transparent 65%);
+    }
+    .hero h1 {
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      position: relative; z-index: 1;
+      line-height: 1.2;
+    }
+    .hero p {
+      color: var(--muted); margin-top: 10px; font-size: 1rem; position: relative; z-index: 1;
+    }
+    .badge {
+      display: inline-block; margin-top: 16px;
+      background: rgba(124,58,237,.2); border: 1px solid rgba(124,58,237,.5);
+      color: #a78bfa; border-radius: 999px; padding: 4px 14px;
+      font-size: .78rem; font-weight: 600; letter-spacing: .04em;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex; gap: 12px; align-items: center;
+      flex-wrap: wrap; margin-bottom: 32px;
+    }
+    .controls label { color: var(--muted); font-size: .9rem; }
+    .controls input[type=number] {
+      width: 110px; padding: 10px 14px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: .95rem;
+      outline: none; transition: border-color .2s;
+    }
+    .controls input[type=number]:focus { border-color: var(--accent); }
+    .btn {
+      padding: 10px 28px; border: none; border-radius: 8px; cursor: pointer;
+      font-weight: 600; font-size: .95rem; transition: all .2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #9333ea);
+      color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,.5); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent2); }
+
+    /* ── Status ── */
+    #status-bar {
+      display: none; padding: 12px 18px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: 24px;
+      font-size: .9rem; color: var(--muted);
+    }
+    #status-bar.running {
+      display: flex; align-items: center; gap: 10px;
+      border-color: var(--accent); color: #a78bfa;
+    }
+    .spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(124,58,237,.3);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Summary Cards ── */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px; margin-bottom: 32px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 22px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: var(--glow); }
+    .card-label { font-size: .78rem; font-weight: 600; letter-spacing: .06em;
+                  color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .card-value { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .card-sub   { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+    .card.accent-purple { border-color: rgba(124,58,237,.45); }
+    .card.accent-cyan   { border-color: rgba(6,182,212,.45); }
+    .card.accent-green  { border-color: rgba(34,197,94,.45); }
+    .card.accent-amber  { border-color: rgba(245,158,11,.45); }
+    .text-purple { color: #a78bfa; }
+    .text-cyan   { color: #38bdf8; }
+    .text-green  { color: var(--green); }
+    .text-amber  { color: var(--amber); }
+
+    /* ── Charts ── */
+    .charts-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 24px; margin-bottom: 32px;
+    }
+    .chart-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px;
+    }
+    .chart-card h2 {
+      font-size: 1rem; font-weight: 700; margin-bottom: 18px;
+      color: var(--text);
+    }
+    .chart-wrapper { position: relative; height: 260px; }
+
+    /* ── Table ── */
+    .table-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin-bottom: 32px;
+    }
+    .table-card h2 {
+      font-size: 1rem; font-weight: 700; padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    thead { background: var(--surface2); }
+    th { padding: 11px 16px; text-align: left; font-weight: 600;
+         color: var(--muted); letter-spacing: .04em; font-size: .78rem; }
+    td { padding: 11px 16px; border-top: 1px solid var(--border); }
+    tr:hover td { background: rgba(255,255,255,.025); }
+    .tag {
+      display: inline-block; padding: 2px 10px; border-radius: 999px;
+      font-size: .75rem; font-weight: 600;
+    }
+    .tag-dist { background: rgba(124,58,237,.2); color: #a78bfa; border: 1px solid rgba(124,58,237,.4); }
+    .tag-single { background: rgba(6,182,212,.2); color: #38bdf8; border: 1px solid rgba(6,182,212,.4); }
+
+    /* ── Scatter chart ── */
+    .scatter-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px; margin-bottom: 32px;
+    }
+    .scatter-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; }
+    .scatter-wrapper { position: relative; height: 320px; }
+
+    /* ── Placeholder ── */
+    #placeholder {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 16px; padding: 80px 20px;
+      color: var(--muted);
+    }
+    #placeholder svg { opacity: .3; }
+    #placeholder p { font-size: 1.05rem; }
+    #results { display: none; }
+
+    /* ── Footer note ── */
+    .footnote {
+      color: var(--muted); font-size: .8rem; text-align: center;
+      padding: 24px 0 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>⚡ Benchmark Độ Trễ</h1>
+  <p>Cơ sở dữ liệu phân tán (Distributed) vs Cơ sở dữ liệu tập trung (Single)</p>
+  <span class="badge">RideApp – PostgreSQL Multi-Region</span>
+</div>
+
+<div class="container">
+
+  <!-- Controls -->
+  <div class="controls">
+    <label for="iter-input">Số lần đo (iterations):</label>
+    <input type="number" id="iter-input" value="100" min="10" max="500" step="10" />
+    <button class="btn btn-primary" id="run-btn" onclick="runBenchmark()">▶ Chạy Benchmark</button>
+    <button class="btn btn-secondary" id="export-btn" onclick="exportCSV()" disabled>⬇ Xuất CSV</button>
+  </div>
+
+  <!-- Status -->
+  <div id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-msg">Đang chạy benchmark, vui lòng chờ…</span>
+  </div>
+
+  <!-- Placeholder -->
+  <div id="placeholder">
+    <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+      <rect x="8" y="16" width="56" height="40" rx="6" stroke="#8b949e" stroke-width="2"/>
+      <path d="M24 36l8 8 16-16" stroke="#8b949e" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <p>Nhấn <strong style="color:var(--text)">Chạy Benchmark</strong> để bắt đầu đo latency thực tế.</p>
+    <p style="font-size:.85rem">Backend cần đang chạy tại <code style="color:#a78bfa">localhost:8080</code></p>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <!-- Summary cards -->
+    <div class="summary-grid" id="summary-cards"></div>
+
+    <!-- Bar charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h2>📖 Độ trễ READ (ms) – Trung bình & Phân vị</h2>
+        <div class="chart-wrapper"><canvas id="readBarChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h2>✍️ Độ trễ WRITE (ms) – Trung bình & Phân vị</h2>
+        <div class="chart-wrapper"><canvas id="writeBarChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Scatter / time-series READ -->
+    <div class="scatter-card">
+      <h2>📈 Phân bố latency READ từng lần đo (µs)</h2>
+      <div class="scatter-wrapper"><canvas id="readScatterChart"></canvas></div>
+    </div>
+
+    <!-- Scatter WRITE -->
+    <div class="scatter-card">
+      <h2>📈 Phân bố latency WRITE từng lần đo (µs)</h2>
+      <div class="scatter-wrapper"><canvas id="writeScatterChart"></canvas></div>
+    </div>
+
+    <!-- Detail table -->
+    <div class="table-card">
+      <h2>📊 Bảng số liệu chi tiết</h2>
+      <table id="detail-table">
+        <thead>
+          <tr>
+            <th>Kịch bản</th>
+            <th>Loại</th>
+            <th>Avg (ms)</th>
+            <th>Min (ms)</th>
+            <th>Max (ms)</th>
+            <th>P50 (ms)</th>
+            <th>P95 (ms)</th>
+            <th>P99 (ms)</th>
+            <th>Lỗi</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+    <p class="footnote">
+      Đo trực tiếp trên máy local • Warmup rounds loại bỏ trước khi tính toán
+      • Thời gian tính từ lúc gọi <code>getConnection()</code> đến khi nhận xong kết quả
+    </p>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────
+let lastData = null;
+let charts = {};
+
+// ── Run benchmark ─────────────────────────────────────────────────────────
+async function runBenchmark() {
+  const iters = parseInt(document.getElementById('iter-input').value) || 100;
+  const btn = document.getElementById('run-btn');
+  const statusBar = document.getElementById('status-bar');
+  const statusMsg = document.getElementById('status-msg');
+
+  btn.disabled = true;
+  statusBar.className = 'running';
+  statusMsg.textContent = `Đang chạy ${iters} iterations × 6 kịch bản… (ước tính ~${Math.round(iters * 0.06)}s)`;
+  document.getElementById('placeholder').style.display = 'none';
+
+  try {
+    const res = await fetch(`http://localhost:8080/api/benchmark/latency?iterations=${iters}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    lastData = await res.json();
+    render(lastData);
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('export-btn').disabled = false;
+  } catch (e) {
+    alert('❌ Lỗi kết nối backend:\n' + e.message + '\n\nHãy chắc chắn Spring Boot đang chạy tại localhost:8080');
+    document.getElementById('placeholder').style.display = 'flex';
+  } finally {
+    btn.disabled = false;
+    statusBar.className = '';
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function render(data) {
+  const cmp = data.summary;
+  renderSummaryCards(cmp);
+  renderBarCharts(data);
+  renderScatterCharts(data);
+  renderTable(data);
+}
+
+function renderSummaryCards(cmp) {
+  const container = document.getElementById('summary-cards');
+  const overheadColor = cmp.readOverheadMs >= 0 ? 'text-amber' : 'text-green';
+
+  container.innerHTML = `
+    <div class="card accent-purple">
+      <div class="card-label">Avg READ – Distributed</div>
+      <div class="card-value text-purple">${fmt(cmp.avgDistributedReadMs)}</div>
+      <div class="card-sub">ms trung bình (North + South)</div>
+    </div>
+    <div class="card accent-cyan">
+      <div class="card-label">Avg READ – Single DB</div>
+      <div class="card-value text-cyan">${fmt(cmp.avgSingleReadMs)}</div>
+      <div class="card-sub">ms trung bình (1 DB tập trung)</div>
+    </div>
+    <div class="card accent-purple">
+      <div class="card-label">Avg WRITE – Distributed</div>
+      <div class="card-value text-purple">${fmt(cmp.avgDistributedWriteMs)}</div>
+      <div class="card-sub">ms trung bình</div>
+    </div>
+    <div class="card accent-cyan">
+      <div class="card-label">Avg WRITE – Single DB</div>
+      <div class="card-value text-cyan">${fmt(cmp.avgSingleWriteMs)}</div>
+      <div class="card-sub">ms trung bình</div>
+    </div>
+    <div class="card ${cmp.readOverheadMs >= 0 ? 'accent-amber' : 'accent-green'}">
+      <div class="card-label">Overhead READ (Dist − Single)</div>
+      <div class="card-value ${overheadColor}">${cmp.readOverheadMs >= 0 ? '+' : ''}${fmt(cmp.readOverheadMs)}</div>
+      <div class="card-sub">${cmp.readOverheadPct >= 0 ? '+' : ''}${fmt(cmp.readOverheadPct)}% so với Single DB</div>
+    </div>
+    <div class="card ${cmp.writeOverheadMs >= 0 ? 'accent-amber' : 'accent-green'}">
+      <div class="card-label">Overhead WRITE (Dist − Single)</div>
+      <div class="card-value ${cmp.writeOverheadMs >= 0 ? 'text-amber' : 'text-green'}">${cmp.writeOverheadMs >= 0 ? '+' : ''}${fmt(cmp.writeOverheadMs)}</div>
+      <div class="card-sub">${cmp.writeOverheadPct >= 0 ? '+' : ''}${fmt(cmp.writeOverheadPct)}% so với Single DB</div>
+    </div>
+  `;
+}
+
+function renderBarCharts(data) {
+  const labels = ['Avg', 'P50', 'P95', 'P99'];
+  const COLORS = {
+    distN:  { bg: 'rgba(124,58,237,.7)',  border: '#7c3aed' },
+    distS:  { bg: 'rgba(139,92,246,.5)', border: '#8b5cf6' },
+    single: { bg: 'rgba(6,182,212,.65)', border: '#06b6d4' },
+  };
+
+  function makeDatasets(section) {
+    const dn = section.distributed_north;
+    const ds = section.distributed_south;
+    const sg = section.single_db;
+    return [
+      { label: 'Distributed – North', data: [dn.avgMs, dn.p50Ms, dn.p95Ms, dn.p99Ms],
+        backgroundColor: COLORS.distN.bg, borderColor: COLORS.distN.border, borderWidth: 2, borderRadius: 6 },
+      { label: 'Distributed – South', data: [ds.avgMs, ds.p50Ms, ds.p95Ms, ds.p99Ms],
+        backgroundColor: COLORS.distS.bg, borderColor: COLORS.distS.border, borderWidth: 2, borderRadius: 6 },
+      { label: 'Single DB', data: [sg.avgMs, sg.p50Ms, sg.p95Ms, sg.p99Ms],
+        backgroundColor: COLORS.single.bg, borderColor: COLORS.single.border, borderWidth: 2, borderRadius: 6 },
+    ];
+  }
+
+  destroyChart('readBarChart');
+  destroyChart('writeBarChart');
+
+  charts.readBar = new Chart(document.getElementById('readBarChart'), {
+    type: 'bar',
+    data: { labels, datasets: makeDatasets(data.read) },
+    options: barOptions('Thời gian (ms)'),
+  });
+
+  charts.writeBar = new Chart(document.getElementById('writeBarChart'), {
+    type: 'bar',
+    data: { labels, datasets: makeDatasets(data.write) },
+    options: barOptions('Thời gian (ms)'),
+  });
+}
+
+function barOptions(yLabel) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#e6edf3', font: { family: 'Inter', size: 12 }, boxWidth: 14 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} ms` } }
+    },
+    scales: {
+      x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,.05)' } },
+      y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,.08)' },
+           title: { display: true, text: yLabel, color: '#8b949e', font: { size: 11 } } }
+    }
+  };
+}
+
+function renderScatterCharts(data) {
+  destroyChart('readScatterChart');
+  destroyChart('writeScatterChart');
+
+  charts.readScatter = new Chart(document.getElementById('readScatterChart'), {
+    type: 'scatter',
+    data: { datasets: makeScatterDatasets(data.read) },
+    options: scatterOptions(),
+  });
+
+  charts.writeScatter = new Chart(document.getElementById('writeScatterChart'), {
+    type: 'scatter',
+    data: { datasets: makeScatterDatasets(data.write) },
+    options: scatterOptions(),
+  });
+}
+
+function makeScatterDatasets(section) {
+  function toXY(arr) {
+    return arr.filter(v => v >= 0).map((v, i) => ({ x: i + 1, y: v }));
+  }
+  return [
+    { label: 'Distributed – North', data: toXY(section.distributed_north.rawSamplesUs),
+      backgroundColor: 'rgba(124,58,237,.6)', pointRadius: 2, pointHoverRadius: 4 },
+    { label: 'Distributed – South', data: toXY(section.distributed_south.rawSamplesUs),
+      backgroundColor: 'rgba(139,92,246,.5)', pointRadius: 2, pointHoverRadius: 4 },
+    { label: 'Single DB', data: toXY(section.single_db.rawSamplesUs),
+      backgroundColor: 'rgba(6,182,212,.65)', pointRadius: 2, pointHoverRadius: 4 },
+  ];
+}
+
+function scatterOptions() {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#e6edf3', font: { family: 'Inter', size: 12 }, boxWidth: 12 } },
+      tooltip: { callbacks: { label: ctx => ` #${ctx.parsed.x}: ${ctx.parsed.y} µs` } }
+    },
+    scales: {
+      x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,.04)' },
+           title: { display: true, text: 'Lần đo', color: '#8b949e', font: { size: 11 } } },
+      y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,.07)' },
+           title: { display: true, text: 'Latency (µs)', color: '#8b949e', font: { size: 11 } } }
+    }
+  };
+}
+
+function renderTable(data) {
+  const rows = [
+    { scenario: 'Distributed – North', op: 'READ',  stats: data.read.distributed_north },
+    { scenario: 'Distributed – South', op: 'READ',  stats: data.read.distributed_south },
+    { scenario: 'Single DB',           op: 'READ',  stats: data.read.single_db },
+    { scenario: 'Distributed – North', op: 'WRITE', stats: data.write.distributed_north },
+    { scenario: 'Distributed – South', op: 'WRITE', stats: data.write.distributed_south },
+    { scenario: 'Single DB',           op: 'WRITE', stats: data.write.single_db },
+  ];
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = rows.map(r => {
+    const s = r.stats;
+    const isDist = r.scenario.startsWith('Distributed');
+    const tag = isDist ? '<span class="tag tag-dist">Phân tán</span>'
+                       : '<span class="tag tag-single">Tập trung</span>';
+    return `<tr>
+      <td>${r.scenario}</td>
+      <td>${r.op}</td>
+      <td style="font-weight:700">${fmt(s.avgMs)}</td>
+      <td>${fmt((s.minUs/1000))}</td>
+      <td>${fmt((s.maxUs/1000))}</td>
+      <td>${fmt(s.p50Ms)}</td>
+      <td>${fmt(s.p95Ms)}</td>
+      <td>${fmt(s.p99Ms)}</td>
+      <td style="color:${s.errorCount>0?'var(--red)':'var(--green)'}">${s.errorCount}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!lastData) return;
+  const data = lastData;
+  const rows = [
+    ['Scenario','Operation','Type','Avg_ms','Min_ms','Max_ms','P50_ms','P95_ms','P99_ms','Errors','Samples'],
+    ...buildCSVRows('READ',  data.read),
+    ...buildCSVRows('WRITE', data.write),
+  ];
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `benchmark_latency_${Date.now()}.csv`;
+  a.click();
+}
+
+function buildCSVRows(op, section) {
+  return [
+    ['Distributed_North', op, 'Phân tán', ...statsRow(section.distributed_north)],
+    ['Distributed_South', op, 'Phân tán', ...statsRow(section.distributed_south)],
+    ['Single_DB',         op, 'Tập trung', ...statsRow(section.single_db)],
+  ];
+}
+
+function statsRow(s) {
+  return [fmt(s.avgMs), fmt(s.minUs/1000), fmt(s.maxUs/1000),
+          fmt(s.p50Ms), fmt(s.p95Ms), fmt(s.p99Ms), s.errorCount, s.sampleCount];
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function fmt(v) { return typeof v === 'number' ? v.toFixed(2) : v; }
+
+function destroyChart(id) {
+  const key = id.replace('Chart','');
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+</script>
+</body>
+</html>
